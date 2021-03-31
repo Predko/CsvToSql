@@ -1,0 +1,77 @@
+﻿<Window x:Class="WpfAppConvertation.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WpfAppConvertation"
+        mc:Ignorable="d"
+        Title="Преобразование CSV файлов интернет банкинга БелАпб" Height="450" Width="900">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition x:Name="StackPanelGridColumn" Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height=".1*"/>
+            <RowDefinition Height="1*"/>
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Column="0" Grid.Row="0" VerticalAlignment="Center" Orientation="Horizontal">
+            <Button Content="Спискок организаций" 
+                    Height="20" Margin="10,5,10,5" Padding="5 0 5 0" 
+                    VerticalAlignment="Center" 
+                    Click="BtnOpenClientsNameFile_Click"
+                    ToolTip="Открывает выбранный файл со списком организаций"/>
+            <Button Content="Создать XML файл со списком организаций" 
+                    Height="20" Margin="10,5,10,5" Padding="5 0 5 0" 
+                    VerticalAlignment="Center" 
+                    Click="ButtonConvertFile_Click"
+                    ToolTip="Создаёт файл со списком организаций из текстового файла"/>
+        </StackPanel>
+        <GridSplitter Grid.Column="1" ShowsPreview="False" Width="4" HorizontalAlignment="Center"/>
+        <StackPanel Grid.Column="2" Grid.Row="0" VerticalAlignment="Center">
+            <TextBox x:Name="tbSqlScriptFile"
+                     HorizontalContentAlignment="Stretch"
+                     VerticalAlignment="Center"
+                     MinWidth="300"
+                     Margin="10 5 10 5" 
+                     GotKeyboardFocus="TbWaterMark_GotKeyboardFocus" LostKeyboardFocus="TbWaterMark_LostKeyboardFocus" MouseDoubleClick="TbWaterMark_MouseDoubleClick" 
+                     ToolTip="Двойной клик - для выбора файла на диске"/>
+        </StackPanel>
+        <DockPanel Grid.Column="0" Grid.Row="1" LastChildFill="True">
+            <Button x:Name="GetNameCompanyFromFileCSV" DockPanel.Dock="Top" Content="Преобразование CSV файлов выписки в XML файл " 
+                    Margin="10 5 10 5" 
+                    IsEnabled="false"
+                    Click="GetNameCompanyFromFileCSV_Click"
+                    ToolTipService.ShowOnDisabled="True"
+                    >
+                <Button.ToolTip>
+                    <TextBlock Text = "Для преобразования выписки необходимо открыть файл со списком организаций.&#010;Кнопка &quot;Список организаций&quot;"/>
+                </Button.ToolTip>
+            </Button>
+            <TextBox x:Name="TbXMLfileName"  MinWidth="400" Margin="10 5 10 5"  DockPanel.Dock="Top"
+                     GotKeyboardFocus="TbWaterMark_GotKeyboardFocus" LostKeyboardFocus="TbWaterMark_LostKeyboardFocus"
+                     MouseDoubleClick="TbWaterMark_MouseDoubleClick"
+                     ToolTip="Двойной клик - для выбора файла на диске"/>
+            <TextBox x:Name="tbFileCSV" DockPanel.Dock="Top"
+                     TextWrapping="Wrap"
+                     VerticalAlignment="Center"
+                     MinWidth="400"  Height="150"
+                     Margin="10 5 10 5"
+                     GotKeyboardFocus="TbWaterMark_GotKeyboardFocus" LostKeyboardFocus="TbWaterMark_LostKeyboardFocus" MouseDoubleClick="TbWaterMark_MouseDoubleClick" 
+                     ToolTip="Двойной клик - для выбора файла на диске"/>
+            <TextBox x:Name="tbMessages"
+                     TextWrapping="Wrap"
+                     VerticalAlignment="Stretch"
+                     Margin="10 5 10 10"
+                     MinWidth="400" Height="150"/>
+        </DockPanel>
+
+        <StackPanel Grid.Column="2" Grid.Row="1">
+            <Button x:Name="BtnMakeSQLScript" Content="Make SQL script" 
+                    Margin="10 5 10 5"
+                    Click="BtnMakeSQLScript_Click"/>
+        </StackPanel>
+
+    </Grid>
+</Window>

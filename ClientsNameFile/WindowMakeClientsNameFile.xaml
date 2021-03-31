@@ -1,0 +1,41 @@
+﻿<Window x:Class="WpfAppConvertation.ClientsFileName.WindowMakeClientsNameFile"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WpfAppConvertation.ClientsFileName"
+        mc:Ignorable="d"
+        Title="WindowMakeClientsNameFile" Height="180" Width="600"
+        WindowStartupLocation="CenterScreen">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height=".1*"/>
+            <RowDefinition Height=".1*"/>
+            <RowDefinition Height=".1*"/>
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" LastChildFill="True" Margin="0,0,0,54" Grid.RowSpan="2">
+            <Label DockPanel.Dock="Left" Margin="10 0 10 0" HorizontalAlignment="Center" VerticalAlignment="Center">Исходный файл с данными о клиентах:</Label>
+            <TextBox x:Name="tbClientsNameFileIn" Margin="10 0 10 0" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                     GotKeyboardFocus="TbWaterMark_GotKeyboardFocus" LostKeyboardFocus="TbWaterMark_LostKeyboardFocus" MouseDoubleClick="TbWaterMark_MouseDoubleClick" 
+                     ToolTip="Двойной клик - для выбора файла на диске"/>
+        </DockPanel>
+
+        <DockPanel Grid.Row="1" LastChildFill="True">
+            <Label DockPanel.Dock="Left" Margin="10 0 10 0" HorizontalAlignment="Center" VerticalAlignment="Center">Конечный XML файл:</Label>
+            <TextBox x:Name="tbClientsNameFileOut" Margin="10 0 10 0" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                     GotKeyboardFocus="TbWaterMark_GotKeyboardFocus" LostKeyboardFocus="TbWaterMark_LostKeyboardFocus" 
+                     MouseDoubleClick="TbClientsNameFileOut_MouseDoubleClick" 
+                     ToolTip="Двойной клик - для выбора файла на диске"/>
+        </DockPanel>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" FlowDirection="RightToLeft" Margin="0,54,0,0" Grid.RowSpan="2">
+            <Button IsCancel="True" Margin="10" Padding="10 0 10 0">Отмена</Button>
+            <Button IsDefault="True" Margin="10" Padding="10 0 10 0" Click="BtnCreateXMLNamesClientFile_Click">Создать XML файл со списком клиентов</Button>
+        </StackPanel>
+
+    </Grid>
+</Window>

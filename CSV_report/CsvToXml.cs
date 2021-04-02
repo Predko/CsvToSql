@@ -215,14 +215,12 @@ namespace SCVtiSQL
                                 return null;
                             }
 
-                            listClients.Add(choosingClientName.SelectedClient);
+                            client = choosingClientName.SelectedClient;
 
-                            idClient = choosingClientName.SelectedClient.Id;
+                            client.UNP = s[9];
                         }
-                        else
-                        {
-                            idClient = client.Id;
-                        }
+                            
+                        idClient = client.Id;
                     }
 
                     ///    0 Код банка; 1 Счет-корреспондент; 2 Номер документа;

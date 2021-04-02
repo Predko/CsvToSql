@@ -10,27 +10,30 @@ using System.Collections;
 
 namespace SCVtiSQL
 {
-    public class Client
+    public class Client : IComparable<Client>, IComparable
     {
-        private string uNP;
-        private string name;
+        private DataRow clientRow;
 
-        public int Id { get; set; }
+        public int Id { get => (int)clientRow[0]; set => clientRow[0] = value; }
 
         public string UNP
         {
-            get => uNP;
-            set => uNP = value ?? "";
+            get => (string)clientRow[1];
+            set => clientRow[1] = value ?? "";
         }
 
-        public string Name 
-        { 
-            get => name; 
-            set => name = value ?? ""; 
+        public string Name
+        {
+            get => (string)clientRow[2];
+            set => clientRow[2] = value ?? "";
         }
 
         // Признак бютжетной организации. Если true - значит этот УНП может соответствовать нескольким клиентам.
-        public bool Multiple { get; set; }
+        public bool Multiple 
+        { 
+            get => (bool)clientRow[3];
+            set => clientRow[3] = value;
+        }
 
         public Client(int id, string uNP, string name, bool multiple = false)
         {
@@ -40,20 +43,82 @@ namespace SCVtiSQL
             Multiple = multiple;
         }
 
-        public Client(DataRow dr)
-        {
-            Id = (int)dr[0];
-            UNP = (string)dr[1];
-            Name = (string)dr[2];
-            Multiple = (bool)dr[3];
-        }
+        public Client(DataRow dr) => clientRow = dr;
 
         override public string ToString()
         {
             string sUNP = (UNP.Length <= 1) ? "         " : UNP;
 
-            return $"{Id,4} {sUNP} {Name}";
+            return $"{sUNP} {Name}";
         }
+
+        #region IComparable<Client>
+
+        public int CompareTo(object obj)
+        {
+            return Name.CompareTo(((Client)obj).Name);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj is null)
+            {
+                return false;
+            }
+
+            return Name == ((Client)obj).Name;
+        }
+
+        public override int GetHashCode()
+        {
+            return Name.GetHashCode();
+        }
+
+        int IComparable<Client>.CompareTo(Client other)
+        {
+            return Name.CompareTo(other.Name);
+        }
+
+        public static bool operator ==(Client left, Client right)
+        {
+            if (left is null)
+            {
+                return right is null;
+            }
+
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(Client left, Client right)
+        {
+            return !(left == right);
+        }
+
+        public static bool operator <(Client left, Client right)
+        {
+            return (left is null) ? (right is object) : left.CompareTo(right) < 0;
+        }
+
+        public static bool operator <=(Client left, Client right)
+        {
+            return left is null || left.CompareTo(right) <= 0;
+        }
+
+        public static bool operator >(Client left, Client right)
+        {
+            return left is object && left.CompareTo(right) > 0;
+        }
+
+        public static bool operator >=(Client left, Client right)
+        {
+            return left is null ? right is null : left.CompareTo(right) >= 0;
+        }
+        #endregion IComparable<Client>
     }
 
     /// <summary>
@@ -178,16 +243,19 @@ namespace SCVtiSQL
                 string unp = (string)clients.Rows[i][1];
                 string name = (string)clients.Rows[i][2];
 
-                if (unp?.Length == 0 && unp != unpClient)
+                if (unp.Length == 0)
                 {
-                    if (name != nameClient)
+                    if (name == nameClient)
                     {
-                        return NotFound;
+                        // В записи данного клиента не было УНП - добавляем.
+                        clients.Rows[i][1] = unpClient;
+                        
+                        return new Client(clients.Rows[i]);
                     }
-
-                    // В записи данного клиента не было УНП - добавляем.
-                    clients.Rows[i][1] = unpClient;
-
+                }
+                else
+                if (unp == unpClient)
+                {
                     return new Client(clients.Rows[i]);
                 }
             }

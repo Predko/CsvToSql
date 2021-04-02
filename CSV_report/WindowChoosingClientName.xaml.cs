@@ -9,6 +9,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.ComponentModel;
 
 namespace SCVtiSQL.CSV_report
 {
@@ -39,8 +40,8 @@ namespace SCVtiSQL.CSV_report
             {
                 listBoxClients.Items.Add(client);
             }
-            
-            listBoxClients.ItemStringFormat
+
+            listBoxClients.Items.SortDescriptions.Add(new SortDescription("", ListSortDirection.Ascending));
         }
 
         private void AcceptId_Click(object sender, RoutedEventArgs e)

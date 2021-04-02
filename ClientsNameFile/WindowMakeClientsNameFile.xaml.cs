@@ -11,7 +11,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace WpfAppConvertation.ClientsFileName
+namespace SCVtiSQL.ClientsFileName
 {
     /// <summary>
     /// Логика взаимодействия для WindowMakeClientsNameFile.xaml

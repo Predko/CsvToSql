@@ -8,7 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace WpfAppConvertation
+namespace SCVtiSQL
 {
     public partial class MainWindow : Window
     {

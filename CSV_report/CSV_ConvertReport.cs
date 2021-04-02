@@ -4,7 +4,7 @@ using System.Data;
 using System.IO;
 using System.Text;
 
-namespace WpfAppConvertation.CSV_DB
+namespace SCVtiSQL.CSV_DB
 {
     /// <summary>
     /// Объект класса читает данные файла CSV, формируемого интернет банкингом Белапб

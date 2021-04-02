@@ -17,14 +17,28 @@ using System.Windows.Shapes;
 
 using Microsoft.Win32;
 
-namespace WpfAppConvertation
+namespace SCVtiSQL
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
+    /// 
+    /// Программа предназначена для преобразования банковской выписки интернет-банкинга Белагропромбанка в формате CSV
+    /// В SQL скрипт, заносящий новые данные в базу данных.
+    /// Идентификация записи в выписке(чтобы избежать дубликатов) выполняется по "Номеру документа", УНП и дате операции.
+    /// Также программа определяет Id плательщика.
+    /// Для этого подготавливается текстовый файл с данными клиентов в формате:
+    /// Id\tUNP\tNameCompany
+    /// Колонким разделены одинарной табуляцией.
+    /// Данные о клиентах хранятся в отдельной таблице Clients
+    /// Перед чтением файлов выписок, таблица Clients должна быть заполнена.
+    /// Для упрощения доступа к данным клиентов, используется класс ListClients
+    /// Данные выписки хранятся в таблице Report.
     /// </summary>
     public partial class MainWindow : Window
     {
-        private readonly ListClientsName listClients;
+        private readonly ListClients listClients;
+
+        private readonly DataSet report;
         
         public MainWindow()
         {
@@ -32,11 +46,78 @@ namespace WpfAppConvertation
 
             InitializeTextBoxXMLfileName();
 
-            Income = null;
+            string fname = App.Args[0].Trim();
 
-            listClients = new ListClientsName(@"h:\Документы\платёжки\2021\list_clients.xml");
+            if (fname.Length != 0)
+            {
+                string s = fname.ToLower().Trim('\\','/','-');
+
+                if (s[0] == '?' || s == "help" || s == "h")
+                {
+                    MessageBox.Show("Использование:\nCSVtoSQL.exe [fileClientsInfo]\n" +
+                        "Где: [fileClientsInfo.txt] - не обязательное имя файла содержащего записи с данными о клиентах\n" +
+                        "в формате:\n Id<Tab>УНП<Tab>Название организации[<Tab>1]- признак бюджетной организации.\n" +
+                        "Колонки разделены одинарными табуляциями.\n" +
+                        "Подключить файл с данными о клиентах можно в самой программе.");
+                }
+            }
+
+            report = new DataSet("Report");
+
+            InitDataTables();
+
+            listClients = new ListClients(report.Tables["clients"], fname);
+
+            FilePath = fname.Substring(0, fname.LastIndexOf('\\') + 1);
 
             listClients.Load();
+        }
+
+        private void InitDataTables()
+        {
+            DataTable dt = new DataTable("clients");
+            
+            {
+                dt.Columns.Add(new DataColumn("Id", Type.GetType("System.Int32")) { Unique = true });
+
+                dt.Columns.Add(new DataColumn("UNP", Type.GetType("System.String")));
+
+                dt.Columns.Add(new DataColumn("NameCompany", Type.GetType("System.String")));
+
+                dt.Columns.Add(new DataColumn("Multiple", Type.GetType("System.Boolean")));
+
+                dt.PrimaryKey = new DataColumn[] { dt.Columns["Id"] };
+
+                report.Tables.Add(dt);
+            }
+
+            dt = new DataTable("income");
+
+            {
+                dt.Columns.Add(new DataColumn("ClientId", Type.GetType("System.Int32")));
+
+                dt.Columns.Add(new DataColumn("BankCode", Type.GetType("System.String")));
+
+                dt.Columns.Add(new DataColumn("CorrAccount", Type.GetType("System.String")));
+
+                dt.Columns.Add(new DataColumn("Number", Type.GetType("System.String")));
+
+                dt.Columns.Add(new DataColumn("Debit", Type.GetType("System.Decimal")));
+
+                dt.Columns.Add(new DataColumn("Credit", Type.GetType("System.Decimal")));
+
+                dt.Columns.Add(new DataColumn("Equivalent", Type.GetType("System.Decimal")));
+
+                dt.Columns.Add(new DataColumn("Date", Type.GetType("System.DateTime")));
+
+                dt.Columns.Add(new DataColumn("Purpose", Type.GetType("System.String")));
+
+                dt.Columns.Add(new DataColumn("NameCompany", Type.GetType("System.String")));
+
+                dt.Columns.Add(new DataColumn("UNP", Type.GetType("System.String")));
+
+                report.Tables.Add(dt);
+            }
         }
     }
 }

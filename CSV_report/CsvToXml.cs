@@ -7,10 +7,10 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using WpfAppConvertation.CSV_report;
-using WpfAppConvertation.ClientsFileName;
+using SCVtiSQL.CSV_report;
+using SCVtiSQL.ClientsFileName;
 
-namespace WpfAppConvertation
+namespace SCVtiSQL
 {
     public partial class MainWindow : Window
     {
@@ -24,9 +24,9 @@ namespace WpfAppConvertation
         /// Возвращает имена файлов или признак отмены операции. 
         /// </summary>
         /// <param name="fileIn">Текстовый файл с информацией о клиентах.</param>
-        /// <param name="clientsName">Формируемый XML файл </param>
+        /// <param name="clientsFileName">Формируемый XML файл </param>
         /// <returns>true - если файлы выбраны, false - отмена операции.</returns>
-        private bool? OpenDialogMakeClientsNameFile(out string fileIn, out string clientsName)
+        private bool? OpenDialogMakeClientsNameFile(out string fileIn, out string clientsFileName)
         {
             WindowMakeClientsNameFile wndMakeClientsNameFile = new WindowMakeClientsNameFile();
 
@@ -38,7 +38,7 @@ namespace WpfAppConvertation
 
             fileIn = wndMakeClientsNameFile.OriginalFile;
 
-            clientsName = wndMakeClientsNameFile.XmlClientsNameFile;
+            clientsFileName = wndMakeClientsNameFile.XmlClientsNameFile;
 
             return res;
         }
@@ -66,14 +66,10 @@ namespace WpfAppConvertation
         /// <param name="fileOut"></param>
         private void ConvertIdNameInfoToXML(string fileIn, string fileOut)
         {
-            DataTable dtIdName = new DataTable("Clients");
+            DataTable clients = report.Tables["clients"];
 
-            dtIdName.Columns.Add(new DataColumn("id", Type.GetType("System.Int32")));
-
-            DataColumn column = new DataColumn("nameCompany", Type.GetType("System.String"));
-
-            dtIdName.Columns.Add(column);
-
+            clients.Clear();
+            
             using (StreamReader sr = new StreamReader(fileIn))
             {
                 string line;
@@ -82,29 +78,32 @@ namespace WpfAppConvertation
                 {
                     string[] s = line.Split('\t');
 
-                    if (s[0] == "")
+                    if (s[0].Length == 0)
                     {
                         break;
                     }
 
-                    int id = int.Parse(s[0]);
+                    if (int.TryParse(s[0], out int id) == false)
+                    {
+                        id = 0;
+                    }
 
-                    DataRow dr = dtIdName.NewRow();
+                    DataRow dr = clients.NewRow();
 
-                    dr.ItemArray = new object[] { id, s[1] };
+                    bool multiple = (s.Length == 4 && (s[3].Trim()[0] == '1'));
 
-                    dtIdName.Rows.Add(dr);
+                    dr.ItemArray = new object[] { id, s[1].Trim(), s[2].Trim(), multiple };
+
+                    clients.Rows.Add(dr);
                 }
             }
 
-            using StreamWriter sw = new StreamWriter(fileOut);
+            clients.AcceptChanges();
 
-            listClients.Set(dtIdName);
+            using StreamWriter sw = new StreamWriter(fileOut);
 
             listClients.Save(sw);
         }
-
-        private DataTable Income { get; set; }
 
         /// <summary>
         /// Читает данные из файлов банковских выписок(имена файлов хранятся в переменной FileNames)
@@ -116,13 +115,19 @@ namespace WpfAppConvertation
         /// <param name="e"></param>
         private void GetNameCompanyFromFileCSV_Click(object sender, RoutedEventArgs e)
         {
-            Income = ConvertDataFromCSVToXML(FileNames);
+            DataTable income = ConvertDataFromCSVToXML(FileNames);
+
+            if (income == null)
+            {
+                return;
+            }
 
             using StreamWriter sw = new StreamWriter(FilePath + "report.xml");
 
-            Income.WriteXml(sw);
-
+            // Сохраняем изменения в списке клиентов, которые были внесены при анализе выписки.
             listClients.Save();
+
+            income.WriteXml(sw);
         }
 
         /// <summary>
@@ -148,29 +153,11 @@ namespace WpfAppConvertation
                 return null;
             }
 
-            DataTable dtIncome = new DataTable("Income");
+            DataTable dtIncome = report.Tables["income"];
 
-            dtIncome.Columns.Add(new DataColumn("ClientId", Type.GetType("System.Int32")));
+            dtIncome.Clear();
 
-            dtIncome.Columns.Add(new DataColumn("BankCode", Type.GetType("System.String")));
-
-            dtIncome.Columns.Add(new DataColumn("CorrAccount", Type.GetType("System.String")));
-
-            dtIncome.Columns.Add(new DataColumn("Number", Type.GetType("System.String")));
-
-            dtIncome.Columns.Add(new DataColumn("Debit", Type.GetType("System.Decimal")));
-
-            dtIncome.Columns.Add(new DataColumn("Credit", Type.GetType("System.Decimal")));
-
-            dtIncome.Columns.Add(new DataColumn("Equivalent", Type.GetType("System.Decimal")));
-
-            dtIncome.Columns.Add(new DataColumn("Date", Type.GetType("System.DateTime")));
-
-            dtIncome.Columns.Add(new DataColumn("Purpose", Type.GetType("System.String")));
-
-            dtIncome.Columns.Add(new DataColumn("NameCompany", Type.GetType("System.String")));
-
-            dtIncome.Columns.Add(new DataColumn("UNP", Type.GetType("System.String")));
+            dtIncome.AcceptChanges();
 
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             var srcEncoding = Encoding.GetEncoding(1251);
@@ -208,33 +195,42 @@ namespace WpfAppConvertation
                     decimal d2 = string.IsNullOrEmpty(s[4]) ? 0 : decimal.Parse(s[4]);
                     decimal d3 = string.IsNullOrEmpty(s[5]) ? 0 : decimal.Parse(s[5]);
 
-                    int id = 0;
+                    int idClient = 0;
 
                     if (listClients.Count() != 0)
                     {
-                        id = listClients.Find(s[8]);
+                        Client client = listClients.Find(s[9], s[8]);
 
-                        if (id == ListClientsName.NotFound)
+                        if (client == ListClients.NotFound)
                         {
+                            // Клиент не найден, предлагаем пользователю выбрать клиента из списка.
                             WindowChoosingClientName choosingClientName = new WindowChoosingClientName(listClients);
 
-                            choosingClientName.DescriptionOfPurpose.Text = s[7];
+                            choosingClientName.DescriptionOfPurpose.Text = $"Номер ПП: {s[2].Trim('\"', '=')} Дата: {s[6]} Сумма: {s[5]}\n" + s[7];
 
                             if (choosingClientName.ShowDialog() == false)
                             {
+                                MessageBox.Show("Операция конвертации отменена");
+
                                 return null;
                             }
 
-                            listClients.Add(id, s[8]);
+                            listClients.Add(choosingClientName.SelectedClient);
+
+                            idClient = choosingClientName.SelectedClient.Id;
+                        }
+                        else
+                        {
+                            idClient = client.Id;
                         }
                     }
 
                     ///    0 Код банка; 1 Счет-корреспондент; 2 Номер документа;
                     ///    3 Обороты: дебет; 4 Обороты: кредит; 5 В эквиваленте; 6 Дата операции;
                     ///    7 Назначение; 8 Наименование контрагента; 9 УНП контрагента;
-                    dr.ItemArray = new object[] { id, s[0], s[1].Trim('\"', '='), s[2].Trim('\"', '='),
+                    dr.ItemArray = new object[] { idClient, s[0], s[1].Trim('\"', '='), s[2].Trim('\"', '='),
                                                   d1, d2, d3, DateTime.Parse(s[6]).Date,
-                                                  s[7], s[8], int.Parse(s[9])
+                                                  s[7], s[8], s[9]
                                                 };
 
                     dtIncome.Rows.Add(dr);

@@ -10,33 +10,42 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace WpfAppConvertation.CSV_report
+namespace SCVtiSQL.CSV_report
 {
     /// <summary>
     /// Логика взаимодействия для WindowChoiceNameClient.xaml
     /// </summary>
     public partial class WindowChoosingClientName : Window
     {
-        private readonly ListClientsName listClients;
+        private readonly ListClients listClients;
 
-        public int IdClient { get; set; }
+        public Client SelectedClient { get; set; }
 
   
-        public WindowChoosingClientName(ListClientsName lcn)
+        public WindowChoosingClientName(ListClients lc)
         {
             InitializeComponent();
 
-            listClients = lcn;
+            listClients = lc;
 
-            foreach (var kvp in listClients)
+            InitListBox();
+
+            DescriptionOfPurpose.Width = listBoxClients.Width;
+        }
+
+        private void InitListBox()
+        {
+            foreach (var client in listClients)
             {
-                listBoxClients.Items.Add(kvp);
+                listBoxClients.Items.Add(client);
             }
+            
+            listBoxClients.ItemStringFormat
         }
 
         private void AcceptId_Click(object sender, RoutedEventArgs e)
         {
-            IdClient = ((KeyValuePair<int, string>)listBoxClients.SelectedItem).Key;
+            SelectedClient = ((Client)listBoxClients.SelectedItem);
 
             this.DialogResult = true;
         }

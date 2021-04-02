@@ -9,7 +9,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace WpfAppConvertation
+namespace SCVtiSQL
 {
     public partial class MainWindow : Window
     {

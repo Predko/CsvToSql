@@ -1,10 +1,11 @@
-﻿<Window x:Class="WpfAppConvertation.CSV_report.WindowChoosingClientName"
+﻿<Window x:Class="SCVtiSQL.CSV_report.WindowChoosingClientName"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:WpfAppConvertation.CSV_report"
+        xmlns:local="clr-namespace:SCVtiSQL.CSV_report"
         mc:Ignorable="d"
+        FontFamily="Liberation Mono"
         Title="Выбор клиента" Height="450" Width="500"
         SizeToContent="WidthAndHeight" WindowStartupLocation="CenterScreen">
     <Grid Margin="10">
@@ -16,8 +17,11 @@
             <RowDefinition Height="1*"/>
             <RowDefinition Height=".2*"/>
         </Grid.RowDefinitions>
-        <TextBox x:Name="DescriptionOfPurpose" Grid.Row="0" Margin="5"/>
-        <ListBox x:Name="listBoxClients" Grid.Row="1" Margin="5"/>
+        <TextBox x:Name="DescriptionOfPurpose" Grid.Row="0" Margin="5"
+                 MinHeight="110"
+                 TextWrapping="Wrap"/>
+        <ListBox x:Name="listBoxClients" Grid.Row="1" 
+                 Margin="5"/>
         <StackPanel Grid.Row="2" Orientation="Horizontal" FlowDirection="RightToLeft">
             <Button IsCancel="True" MinWidth="80" Margin="10" HorizontalAlignment="Right">Cancel</Button>
             <Button IsDefault="True" Click="AcceptId_Click" MinWidth="80" Margin="10" HorizontalAlignment="Right">Ok</Button>

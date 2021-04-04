@@ -38,7 +38,7 @@ namespace CSVtoSQL
     {
         private readonly ListClients listClients;
 
-        private readonly DataSet report;
+        private readonly DataSet reportsInfo;
 
         /// <summary>
         /// Путь к рабочему каталогу.
@@ -58,11 +58,11 @@ namespace CSVtoSQL
             
             ClientsFileName = InitFileName();
 
-            report = new DataSet("Report");
+            reportsInfo = new DataSet("ReportsInfo");
 
             InitDataTables();
 
-            listClients = new ListClients(report.Tables["clients"], ClientsFileName);
+            listClients = new ListClients(reportsInfo.Tables["clients"], ClientsFileName);
 
             if (listClients.Load() == false)
             {
@@ -148,10 +148,10 @@ namespace CSVtoSQL
 
                 dt.PrimaryKey = new DataColumn[] { dt.Columns["Id"] };
 
-                report.Tables.Add(dt);
+                reportsInfo.Tables.Add(dt);
             }
 
-            dt = new DataTable("income");
+            dt = new DataTable("reports");
 
             {
                 dt.Columns.Add(new DataColumn("ClientId", Type.GetType("System.Int32")));
@@ -176,7 +176,7 @@ namespace CSVtoSQL
 
                 dt.Columns.Add(new DataColumn("UNP", Type.GetType("System.String")));
 
-                report.Tables.Add(dt);
+                reportsInfo.Tables.Add(dt);
             }
         }
     }

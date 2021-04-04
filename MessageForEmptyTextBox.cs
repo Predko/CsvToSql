@@ -94,6 +94,5 @@ namespace CSVtoSQL
 
             ((SolidColorBrush)textBox.Background).Color = color;
         }
-
     }
 }

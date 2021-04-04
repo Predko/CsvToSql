@@ -32,9 +32,9 @@ namespace CSVtoSQL
         public string XmlReportfileName { get; set; } = "";
 
         /// <summary>
-        /// Массив имён файлов выписок. Выбирается пользователем.
+        /// Список имён файлов выписок. Выбирается пользователем.
         /// </summary>
-        private List<string> FileNamesCSV = new List<string>();
+        private readonly List<string> FileNamesCSV = new List<string>();
 
         /// <summary>
         /// Имя файла SQL скрипта.
@@ -47,7 +47,6 @@ namespace CSVtoSQL
 
             waterMark.AddWaterMark(TbXMLfileName, emptyXmlFileName, Brushes.Gray, XmlReportfileName);
             
-            // Массив строк не должен быть равен null, иначе невозможно определить его тип.
             waterMark.AddWaterMark(tbFilesCSV, emptyReportsFileName, Brushes.Gray, FileNamesCSV);
             
             waterMark.AddWaterMark(tbSqlScriptFile, emptySqlScriptFileName, Brushes.Gray, XmlReportfileName);
@@ -80,7 +79,7 @@ namespace CSVtoSQL
                     return;
                 }
 
-                if (waterMark.GetObject(tb) is List<string> ls)
+                if (waterMark.IsContains(tb) == true && waterMark.GetObject(tb) is List<string> ls)
                 {
                     ls.Clear();
 

@@ -26,7 +26,7 @@ namespace CSVtoSQL
 
                 brushTb = tb.Foreground;
                 brushWm = brush;
-                
+
                 tb.Foreground = brushWm;
                 tb.Text = wm;
             }
@@ -41,6 +41,8 @@ namespace CSVtoSQL
         {
             emptyLinesOfTextBoxs.Add(tb, new WaterMarkElement(tb, es, obj, brushWm));
         }
+
+        public bool IsContains(TextBox tb) => emptyLinesOfTextBoxs.ContainsKey(tb);
 
         public void RemoveWaterMark(TextBox tb) => emptyLinesOfTextBoxs.Remove(tb);
 
@@ -71,7 +73,7 @@ namespace CSVtoSQL
         /// <param name="e"></param>
         public void TbWm_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
         {
-            if (!(sender is TextBox tb))
+            if (!(sender is TextBox tb) || emptyLinesOfTextBoxs.ContainsKey(tb) == false)
             {
                 return;
             }
@@ -91,7 +93,7 @@ namespace CSVtoSQL
         /// <param name="e"></param>
         public void TbWm_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
         {
-            if (!(sender is TextBox tb))
+            if (!(sender is TextBox tb) || emptyLinesOfTextBoxs.ContainsKey(tb) == false)
             {
                 return;
             }

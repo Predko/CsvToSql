@@ -30,16 +30,6 @@
                     ToolTip="Создаёт файл со списком организаций из текстового файла"/>
         </StackPanel>
         <GridSplitter Grid.Column="1" ShowsPreview="False" Width="4" HorizontalAlignment="Center"/>
-        <StackPanel Grid.Column="2" Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center">
-            <TextBlock Text="Файл SQL скрипта:" VerticalAlignment="Center" Margin="5 0 5 0"/>
-            <TextBox x:Name="tbSqlScriptFile"
-                     HorizontalContentAlignment="Stretch"
-                     VerticalAlignment="Center"
-                     MinWidth="300"
-                     Margin="10 5 10 5" 
-                     GotKeyboardFocus="TbWm_GotKeyboardFocus" LostKeyboardFocus="TbWm_LostKeyboardFocus" MouseDoubleClick="TbWm_MouseDoubleClick" 
-                     ToolTip="Двойной клик - для выбора файла на диске"/>
-        </StackPanel>
         <DockPanel Grid.Column="0" Grid.Row="1" LastChildFill="True">
             <Button x:Name="TBlkBtnConvertCSVtoXMLToolTip" DockPanel.Dock="Top" Content="Преобразование CSV файлов выписки в XML файл " 
                     Margin="10 5 10 5" 
@@ -60,19 +50,40 @@
                      VerticalAlignment="Center"
                      MinWidth="400"  Height="150"
                      Margin="10 5 10 5"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     ScrollViewer.HorizontalScrollBarVisibility="Auto"
                      GotKeyboardFocus="TbWm_GotKeyboardFocus" LostKeyboardFocus="TbWm_LostKeyboardFocus" MouseDoubleClick="TbWm_MouseDoubleClick" 
                      ToolTip="Двойной клик - для выбора файла на диске"/>
             <TextBox x:Name="tbMessages"
                      TextWrapping="Wrap"
                      VerticalAlignment="Stretch"
                      Margin="10 5 10 10"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     ScrollViewer.HorizontalScrollBarVisibility="Auto"
                      MinWidth="400" Height="150"/>
         </DockPanel>
 
-        <StackPanel Grid.Column="2" Grid.Row="1">
+        <StackPanel Grid.Column="2" Grid.Row="0" Grid.RowSpan="2">
+            <TextBlock Text="Исходный XML файл выписки:" Margin="10 10 10 5"/>
+            <TextBox x:Name="tbXmlReportFile"
+                    HorizontalContentAlignment="Stretch"
+                    VerticalAlignment="Center"
+                    MinWidth="300"
+                    Margin="10 5 10 5" 
+                    GotKeyboardFocus="TbWm_GotKeyboardFocus" LostKeyboardFocus="TbWm_LostKeyboardFocus" MouseDoubleClick="TbWm_MouseDoubleClick" 
+                    ToolTip="Двойной клик - для выбора файла на диске"/>
+            <TextBlock Text="Файл SQL скрипта:" Margin="10 10 10 5"/>
+            <TextBox x:Name="tbSqlScriptFile"
+                    HorizontalContentAlignment="Stretch"
+                    VerticalAlignment="Center"
+                    MinWidth="300"
+                    Margin="10 5 10 5" 
+                    GotKeyboardFocus="TbWm_GotKeyboardFocus" LostKeyboardFocus="TbWm_LostKeyboardFocus" MouseDoubleClick="TbWm_MouseDoubleClick" 
+                    ToolTip="Двойной клик - для выбора файла на диске"/>
             <Button x:Name="BtnMakeSQLScript" Content="Make SQL script" 
                     Margin="10 5 10 5"
-                    Click="BtnMakeSQLScript_Click"/>
+                    Click="BtnMakeSQLScript_Click"
+                    ToolTip="Создаёт SQL скрипт файл из банковских выписок."/>
         </StackPanel>
 
     </Grid>

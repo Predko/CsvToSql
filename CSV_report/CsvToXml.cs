@@ -16,6 +16,7 @@ namespace CSVtoSQL
 {
     public partial class MainWindow : Window
     {
+        #region Чтения и создание XML файла с данными клиентов. Заполнение таблицы "Clients" данными.
         /// <summary>
         /// Открывает диалог для выбора файла с данными клиентов и файла для сохранения данных клиентов в формате XML.
         /// Считывает данные клиентов в таблицу.
@@ -75,20 +76,20 @@ namespace CSVtoSQL
                 return;
             }
 
-            string file = openFileDialog.FileName.ToLower();
+            string file = openFileDialog.FileName;
 
             bool isDataReadOk = false;
 
-            if (file.LastIndexOf(".xml") != -1)
+            if (file.LastIndexOf(".xml", StringComparison.OrdinalIgnoreCase) != -1)
             {
                 ClientsFileName = openFileDialog.FileName;
 
                 isDataReadOk = listClients.Load(ClientsFileName);
             }
             else
-            if (file.LastIndexOf(".txt") != -1)
+            if (file.LastIndexOf(".txt", StringComparison.OrdinalIgnoreCase) != -1)
             {
-                ConvertIdNameInfoToXML(openFileDialog.FileName, ClientsFileName);
+                ConvertIdNameInfoToXML(file, ClientsFileName);
 
                 isDataReadOk = true;
             }
@@ -119,7 +120,7 @@ namespace CSVtoSQL
         /// <param name="fileOut"></param>
         private void ConvertIdNameInfoToXML(string fileIn, string fileOut)
         {
-            DataTable clients = report.Tables["clients"];
+            DataTable clients = reportsInfo.Tables["clients"];
 
             clients.Clear();
 
@@ -157,7 +158,9 @@ namespace CSVtoSQL
 
             listClients.Save(sw);
         }
+        #endregion
 
+        #region Конвертация банковских выписок из формата CSV в XML формат и заполнение таблицы "Reports" данными выписок.
         /// <summary>
         /// Читает данные из файлов банковских выписок(имена файлов хранятся в переменной FileNames)
         /// и записывает их в таблицу.
@@ -186,9 +189,9 @@ namespace CSVtoSQL
                 return;
             }
 
-            DataTable income = ConvertDataFromCSVToXML(FileNamesCSV.ToArray());
+            DataTable reports = ConvertDataFromCSVToXML(FileNamesCSV.ToArray());
 
-            if (income == null)
+            if (reports == null)
             {
                 return;
             }
@@ -207,7 +210,7 @@ namespace CSVtoSQL
                 listClients.Save(filename);
             }
 
-            income.WriteXml(sw, XmlWriteMode.WriteSchema);
+            reports.WriteXml(sw, XmlWriteMode.WriteSchema);
         }
 
         /// <summary>
@@ -226,11 +229,11 @@ namespace CSVtoSQL
         /// <returns>Таблица DataTable с данными выписок.</returns>
         private DataTable ConvertDataFromCSVToXML(string[] filesIn)
         {
-            DataTable dtIncome = report.Tables["income"];
+            DataTable dtReports = reportsInfo.Tables["reports"];
 
-            dtIncome.Clear();
+            dtReports.Clear();
 
-            dtIncome.AcceptChanges();
+            dtReports.AcceptChanges();
 
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             var srcEncoding = Encoding.GetEncoding(1251);
@@ -262,7 +265,7 @@ namespace CSVtoSQL
                 {
                     string[] s = line.Split(';');
 
-                    DataRow dr = dtIncome.NewRow();
+                    DataRow dr = dtReports.NewRow();
 
                     decimal d1 = string.IsNullOrEmpty(s[3]) ? 0 : decimal.Parse(s[3]);
                     decimal d2 = string.IsNullOrEmpty(s[4]) ? 0 : decimal.Parse(s[4]);
@@ -304,7 +307,7 @@ namespace CSVtoSQL
                                                   s[7], s[8], s[9]
                                                 };
 
-                    dtIncome.Rows.Add(dr);
+                    dtReports.Rows.Add(dr);
 
                     tbMessages.Text += $".";
 
@@ -322,7 +325,8 @@ namespace CSVtoSQL
 
             tbMessages.Text += $"\nTotal {totalRecords} records.\nDebit = {debit}, Credit = {credit}";
 
-            return dtIncome;
+            return dtReports;
         }
+        #endregion
     }
 }

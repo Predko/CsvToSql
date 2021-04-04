@@ -8,7 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace SCVtiSQL
+namespace CSVtoSQL
 {
     public partial class MainWindow : Window
     {
@@ -20,7 +20,15 @@ namespace SCVtiSQL
 
         private void MakeSQLScript()
         {
-            throw new NotImplementedException();
+            if (IsWaterMarkTextBoxEmpty(tbSqlScriptFile) == true)
+            {
+                MessageForEmptyTextBox messageBox = new MessageForEmptyTextBox(tbSqlScriptFile);
+
+                messageBox.Show("Укажите конечный файл для SQL скрипта");
+
+                return;
+            }
+
         }
 
     }

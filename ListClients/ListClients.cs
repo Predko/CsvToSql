@@ -4,15 +4,15 @@ using System.Data;
 using System.IO;
 using System.Text;
 using System.Windows;
-using SCVtiSQL;
+using CSVtoSQL;
 using System.Linq;
 using System.Collections;
 
-namespace SCVtiSQL
+namespace CSVtoSQL
 {
     public class Client : IComparable<Client>, IComparable
     {
-        private DataRow clientRow;
+        private readonly DataRow clientRow;
 
         public int Id { get => (int)clientRow[0]; set => clientRow[0] = value; }
 
@@ -305,6 +305,32 @@ namespace SCVtiSQL
                 return false;
             }
 
+            // Проверяем, соответствует ли схема данных читаемого файла.
+            using (DataTable dt = new DataTable())
+            {
+                dt.ReadXmlSchema(streamReader);
+
+                if (dt.TableName == clients.TableName 
+                    && dt.Columns.Count == clients.Columns.Count)
+                {
+                    for (int i = 0; i != dt.Columns.Count; i++)
+                    {
+                        if (dt.Columns[i].ColumnName != clients.Columns[i].ColumnName)
+                        {
+                            return false;
+                        }
+                    }
+                }
+                else
+                {
+                    return false;
+                }
+
+                streamReader.BaseStream.Position = 0;
+
+                streamReader.DiscardBufferedData();
+            }
+            
             clients.Clear();
 
             clients.ReadXml(streamReader);

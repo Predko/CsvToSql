@@ -11,7 +11,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace SCVtiSQL.ClientsFileName
+namespace CSVtoSQL.ClientsFileName
 {
     /// <summary>
     /// Логика взаимодействия для WindowMakeClientsNameFile.xaml
@@ -44,9 +44,9 @@ namespace SCVtiSQL.ClientsFileName
             mainWimdow.SetWaterMarkString(tbClientsNameFileOut, emptyInputfileName);
         }
 
-        private void TbWaterMark_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) => mainWimdow.TbWaterMark_GotKeyboardFocus(sender, e);
+        private void TbWm_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) => mainWimdow.TbWm_GotKeyboardFocus(sender, e);
 
-        private void TbWaterMark_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) => mainWimdow.TbWaterMark_LostKeyboardFocus(sender, e);
+        private void TbWm_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) => mainWimdow.TbWm_LostKeyboardFocus(sender, e);
 
 
         /// <summary>
@@ -55,15 +55,27 @@ namespace SCVtiSQL.ClientsFileName
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void TbWaterMark_MouseDoubleClick(object sender, MouseButtonEventArgs e) => mainWimdow.TbWaterMark_MouseDoubleClick(sender, e);
+        private void TbWm_MouseDoubleClick(object sender, MouseButtonEventArgs e) => mainWimdow.TbWm_MouseDoubleClick(sender, e);
 
         private void BtnCreateXMLNamesClientFile_Click(object sender, RoutedEventArgs e)
         {
             // Проверяем, введены ли имена файлов.
-            if (tbClientsNameFileIn.Text == mainWimdow.GetWaterMarkString(tbClientsNameFileIn)
-                || tbClientsNameFileOut.Text == mainWimdow.GetWaterMarkString(tbClientsNameFileOut))
+            if (mainWimdow.IsWaterMarkTextBoxEmpty(tbClientsNameFileIn) == true)
             {
-                DialogResult = false;
+                MessageForEmptyTextBox messageBox = new MessageForEmptyTextBox(tbClientsNameFileIn);
+
+                messageBox.Show("Укажите исходный текстовый файл с данными клиентов.");
+
+                return;
+            }
+            else
+            if (mainWimdow.IsWaterMarkTextBoxEmpty(tbClientsNameFileOut) == true)
+            {
+                MessageForEmptyTextBox messageBox = new MessageForEmptyTextBox(tbClientsNameFileOut);
+
+                messageBox.Show("Укажите файл для записи данных клиентов.");
+
+                return;
             }
             else
             {
@@ -73,16 +85,20 @@ namespace SCVtiSQL.ClientsFileName
             }
         }
 
+        private void TbClientsNameFileOut_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            tbClientsNameFileOut.Text = GetFileNameToSave() ?? "";
+        }
+
         /// <summary>
-        /// Создаёт диалоговое окно выбора файла/файлов и возвращает массив выбранных файлов.
+        /// Создаёт диалоговое окно выбора файла и возвращает имя выбранного файла.
         /// </summary>
-        /// <param name="multiselect">Признак множественного(true) или одиночного(false) выбора</param>
-        /// <returns></returns>
-        private string GetNameSaveFiles()
+        /// <returns>Имя файла или null</returns>
+        private string GetFileNameToSave()
         {
             SaveFileDialog saveFileDialog = new SaveFileDialog
             {
-                Filter = "All files *.*|*.*|CSV|*.csv|TXT|*.txt|XML|*.xml",
+                Filter = "TXT|*.txt|All files *.*",
             };
 
             if (saveFileDialog.ShowDialog() == true)
@@ -98,11 +114,6 @@ namespace SCVtiSQL.ClientsFileName
             }
 
             return null;
-        }
-
-        private void TbClientsNameFileOut_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            tbClientsNameFileOut.Text = GetNameSaveFiles();
         }
     }
 }

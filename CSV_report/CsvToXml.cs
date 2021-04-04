@@ -7,17 +7,38 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using SCVtiSQL.CSV_report;
-using SCVtiSQL.ClientsFileName;
+using CSVtoSQL.CSV_report;
+using CSVtoSQL.ClientsFileName;
+using System.Windows.Media;
+using System.Windows.Threading;
 
-namespace SCVtiSQL
+namespace CSVtoSQL
 {
     public partial class MainWindow : Window
     {
-        string[] FileNames;
-        string FilePath;
-        string ClientsFileName;
+        /// <summary>
+        /// Массив имён файлов выписок. Выбирается пользователем.
+        /// </summary>
+        string[] FileNamesCSV;
 
+
+        /// <summary>
+        /// Открывает диалог для выбора файла с данными клиентов и файла для сохранения данных клиентов в формате XML.
+        /// Считывает данные клиентов в таблицу.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void BtnConvertClientsFileToXML_Click(object sender, RoutedEventArgs e)
+        {
+            if (OpenDialogMakeClientsNameFile(out string fileIn, out string clientsFileName) == false)
+            {
+                return;
+            }
+
+            ClientsFileName = clientsFileName;
+
+            ConvertIdNameInfoToXML(fileIn, clientsFileName);
+        }
 
         /// <summary>
         /// Создаёт диалоговое окно для выбора текстового файла с информацией о клиентах и конечного XML файла
@@ -28,38 +49,79 @@ namespace SCVtiSQL
         /// <returns>true - если файлы выбраны, false - отмена операции.</returns>
         private bool? OpenDialogMakeClientsNameFile(out string fileIn, out string clientsFileName)
         {
-            WindowMakeClientsNameFile wndMakeClientsNameFile = new WindowMakeClientsNameFile();
-
-            wndMakeClientsNameFile.Owner = this;
+            WindowMakeClientsNameFile wndMakeClientsNameFile = new WindowMakeClientsNameFile
+            {
+                Owner = this
+            };
 
             wndMakeClientsNameFile.InitializeWaterMark(this);
 
             bool? res = wndMakeClientsNameFile.ShowDialog();
 
-            fileIn = wndMakeClientsNameFile.OriginalFile;
+            clientsFileName = (res == true) ? wndMakeClientsNameFile.XmlClientsNameFile : null;
 
-            clientsFileName = wndMakeClientsNameFile.XmlClientsNameFile;
+            fileIn = wndMakeClientsNameFile.OriginalFile;
 
             return res;
         }
 
-        private void ButtonConvertFile_Click(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Открывает диалог для выбора файла с данными клиентов.
+        /// В зависимости от типа выбранного файла, производит соответствующее чтение данных.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void BtnOpenClientsNameFile_Click(object sender, RoutedEventArgs e)
         {
-            if (OpenDialogMakeClientsNameFile(out string fileIn, out ClientsFileName) == false)
+            OpenFileDialog openFileDialog = new OpenFileDialog()
+            {
+                Filter = "XML|*.xml|All files *.*|*.*",
+                InitialDirectory = Directory.GetCurrentDirectory()
+            };
+
+            if (openFileDialog.ShowDialog() == false)
             {
                 return;
             }
 
-            ConvertIdNameInfoToXML(fileIn, ClientsFileName);
-        }
+            string file = openFileDialog.FileName.ToLower();
 
-        private void BtnOpenClientsNameFile_Click(object sender, RoutedEventArgs e)
-        {
+            bool isDataReadOk = false;
 
+            if (file.LastIndexOf(".xml") != -1)
+            {
+                ClientsFileName = openFileDialog.FileName;
+
+                isDataReadOk = listClients.Load(ClientsFileName);
+            }
+            else
+            if (file.LastIndexOf(".txt") != -1)
+            {
+                ConvertIdNameInfoToXML(openFileDialog.FileName, ClientsFileName);
+
+                isDataReadOk = true;
+            }
+
+            TBlkBtnConvertCSVtoXMLToolTip.IsEnabled = isDataReadOk;
+
+            ChangeBtnConvertCSVtoXMLToolTip();
         }
 
         /// <summary>
-        /// Преобразует текстовые данные (ID NameCompany) из файла fileIn
+        /// Метод меняет подсказку для кнопки в зависимости от её активности.
+        /// </summary>
+        /// <param name="needToChange"></param>
+        private void ChangeBtnConvertCSVtoXMLToolTip()
+        {
+            bool needToChange = TBlkBtnConvertCSVtoXMLToolTip.IsEnabled;
+
+            TblkBtnConvertCSVtoXMLToolTip.Text = (needToChange == true) ? "Преобразовать выбранные файлы выписок в XML файл"
+                                                                        : "Для преобразования выписки необходимо открыть файл со списком организаций." +
+                                                                          "\nКнопка \"Список организаций\"";
+        }
+
+        /// <summary>
+        /// Преобразует текстовые данные (ID UNP NameCompany) из файла fileIn
         /// в XML формат и записывает в файл fileOut
         /// </summary>
         /// <param name="fileIn"></param>
@@ -69,7 +131,7 @@ namespace SCVtiSQL
             DataTable clients = report.Tables["clients"];
 
             clients.Clear();
-            
+
             using (StreamReader sr = new StreamReader(fileIn))
             {
                 string line;
@@ -113,21 +175,39 @@ namespace SCVtiSQL
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void GetNameCompanyFromFileCSV_Click(object sender, RoutedEventArgs e)
+        private void BtnConvertCSVtoXML_Click(object sender, RoutedEventArgs e)
         {
-            DataTable income = ConvertDataFromCSVToXML(FileNames);
+            if (XmlReportfileName.Trim().Length == 0)
+            {
+                MessageForEmptyTextBox messageBox = new MessageForEmptyTextBox(TbXMLfileName);
+
+                messageBox.Show("Укажите конечный файл для выписки");
+
+                return;
+            }
+
+            DataTable income = ConvertDataFromCSVToXML(FileNamesCSV);
 
             if (income == null)
             {
                 return;
             }
 
-            using StreamWriter sw = new StreamWriter(FilePath + "report.xml");
+            using StreamWriter sw = new StreamWriter(TbXMLfileName.Text);
 
             // Сохраняем изменения в списке клиентов, которые были внесены при анализе выписки.
             listClients.Save();
 
-            income.WriteXml(sw);
+            string filename = $"{FilePath}\\CsvToXml_clients.xml";
+
+            if (listClients.FileName != filename)
+            {
+                // Сохраняем в папке с выпиской файл CsvToXml_clients.xml, для последующей автоматической загрузки данных,
+                // если программа запущена без аргументов.
+                listClients.Save(filename);
+            }
+
+            income.WriteXml(sw, XmlWriteMode.WriteSchema);
         }
 
         /// <summary>
@@ -148,7 +228,9 @@ namespace SCVtiSQL
         {
             if (filesIn == null)
             {
-                MessageBox.Show($"No input files specified");
+                MessageForEmptyTextBox messageBox = new MessageForEmptyTextBox(tbFilesCSV);
+
+                messageBox.Show("Укажите файлы выписки");
 
                 return null;
             }
@@ -219,7 +301,7 @@ namespace SCVtiSQL
 
                             client.UNP = s[9];
                         }
-                            
+
                         idClient = client.Id;
                     }
 

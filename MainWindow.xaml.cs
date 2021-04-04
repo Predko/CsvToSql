@@ -17,7 +17,7 @@ using System.Windows.Shapes;
 
 using Microsoft.Win32;
 
-namespace SCVtiSQL
+namespace CSVtoSQL
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -39,40 +39,100 @@ namespace SCVtiSQL
         private readonly ListClients listClients;
 
         private readonly DataSet report;
-        
+
+        /// <summary>
+        /// Путь к рабочему каталогу.
+        /// </summary>
+        string FilePath;
+
+        /// <summary>
+        /// Имя файла с данными клиентов.
+        /// </summary>
+        string ClientsFileName;
+
         public MainWindow()
         {
             InitializeComponent();
 
-            InitializeTextBoxXMLfileName();
-
-            string fname = App.Args[0].Trim();
-
-            if (fname.Length != 0)
-            {
-                string s = fname.ToLower().Trim('\\','/','-');
-
-                if (s[0] == '?' || s == "help" || s == "h")
-                {
-                    MessageBox.Show("Использование:\nCSVtoSQL.exe [fileClientsInfo]\n" +
-                        "Где: [fileClientsInfo.txt] - не обязательное имя файла содержащего записи с данными о клиентах\n" +
-                        "в формате:\n Id<Tab>УНП<Tab>Название организации[<Tab>1]- признак бюджетной организации.\n" +
-                        "Колонки разделены одинарными табуляциями.\n" +
-                        "Подключить файл с данными о клиентах можно в самой программе.");
-                }
-            }
+            InitializeTextBoxWaterMark();
+            
+            ClientsFileName = InitFileName();
 
             report = new DataSet("Report");
 
             InitDataTables();
 
-            listClients = new ListClients(report.Tables["clients"], fname);
+            listClients = new ListClients(report.Tables["clients"], ClientsFileName);
 
-            FilePath = fname.Substring(0, fname.LastIndexOf('\\') + 1);
+            if (listClients.Load() == false)
+            {
+                // Не удалось загрузить файл с данными о клиентах - делаем кнопку чтения выписок неактивной.
+                TBlkBtnConvertCSVtoXMLToolTip.IsEnabled = false;
+            }
 
-            listClients.Load();
+            ChangeBtnConvertCSVtoXMLToolTip();
         }
 
+        /// <summary>
+        /// Читает аргументы из командной строки и инициализирует переменные FilePath
+        /// </summary>
+        /// <returns></returns>
+        private string InitFileName()
+        {
+            string fname = null, filePath = null;
+
+            if (App.Args.Length != 0)
+            {
+                fname = App.Args[0].Trim();
+
+                if (fname.Length != 0)
+                {
+                    string s = fname.ToLower().Trim('\\', '/', '-');
+
+                    if (s[0] == '?' || s == "help" || s == "h")
+                    {
+                        MessageBox.Show("Использование:\nCSVtoSQL.exe [fileClientsInfo]\n" +
+                            "Где: [fileClientsInfo.txt] - не обязательное имя файла содержащего записи с данными о клиентах\n" +
+                            "в формате:\n Id<Tab>УНП<Tab>Название организации[<Tab>1]- признак бюджетной организации.\n" +
+                            "Колонки разделены одинарными табуляциями.\n" +
+                            "Подключить файл с данными о клиентах можно в самой программе.");
+
+                        fname = null;
+                    }
+                    else
+                    {
+                        filePath = fname.Substring(0, fname.LastIndexOf('\\') + 1);
+
+
+                        if (File.Exists(fname) == false)
+                        {
+                            fname = null;
+                            
+                            if (Directory.Exists(filePath) == false)
+                            {
+                                filePath = null;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (filePath == null)
+            {
+                FilePath = Directory.GetCurrentDirectory();
+            }
+
+            if (fname == null)
+            {
+                fname = $"{FilePath}\\CsvToXml_clients.xml";
+            }
+
+            return fname;
+        }
+
+        /// <summary>
+        /// Инициализация таблиц для хранения данных.
+        /// </summary>
         private void InitDataTables()
         {
             DataTable dt = new DataTable("clients");

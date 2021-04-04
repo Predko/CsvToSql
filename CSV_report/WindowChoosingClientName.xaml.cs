@@ -11,7 +11,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.ComponentModel;
 
-namespace SCVtiSQL.CSV_report
+namespace CSVtoSQL.CSV_report
 {
     /// <summary>
     /// Логика взаимодействия для WindowChoiceNameClient.xaml
@@ -46,9 +46,19 @@ namespace SCVtiSQL.CSV_report
 
         private void AcceptId_Click(object sender, RoutedEventArgs e)
         {
+            SelectedItem();
+        }
+
+        private void ListBoxClients_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            SelectedItem();
+        }
+
+        private void SelectedItem()
+        {
             SelectedClient = ((Client)listBoxClients.SelectedItem);
 
-            this.DialogResult = true;
+            DialogResult = true;
         }
     }
 }

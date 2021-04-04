@@ -1,8 +1,7 @@
 {
   "profiles": {
     "WpfAppConvertation": {
-      "commandName": "Project",
-      "commandLineArgs": "h:\\Документы\\платёжки\\2021\\list_clients.xml"
+      "commandName": "Project"
     }
   }
 }

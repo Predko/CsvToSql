@@ -9,7 +9,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace SCVtiSQL
+namespace CSVtoSQL
 {
     public partial class MainWindow : Window
     {
@@ -17,30 +17,24 @@ namespace SCVtiSQL
 
         private const string emptyReportsfileName = "Введите имена файлов выписок...";
 
-        private const string emptySqlScriptfileName = "Введите имя файла для формирования Sql скрипта...";
+        private const string emptySqlScriptfileName = "Введите имя файла Sql скрипта...";
 
         /// <summary>
         /// Словарь, хранящий строки "водяных знаков" текстовых полей и признак множественного выбора файлов.
         /// </summary>
         private Dictionary<TextBox, string> emptyLinesOfTextBoxs = new Dictionary<TextBox, string>();
 
-        private string xMLfileName = "";
+        /// <summary>
+        /// XML файл для формируемой выписки
+        /// </summary>
+        public string XmlReportfileName { get; set; } = "";
 
-        public string XMLfileName
+        private void InitializeTextBoxWaterMark()
         {
-            get => xMLfileName;
-            set 
-            { 
-                xMLfileName = value; 
-                TbXMLfileName.Text = value; 
-            }
-        }
-
-        private void InitializeTextBoxXMLfileName()
-        {
+            
             SetWaterMarkString(TbXMLfileName, emptyXMLfileName);
 
-            SetWaterMarkString(tbFileCSV, emptyReportsfileName);
+            SetWaterMarkString(tbFilesCSV, emptyReportsfileName);
 
             SetWaterMarkString(tbSqlScriptFile, emptySqlScriptfileName);
         }
@@ -56,7 +50,10 @@ namespace SCVtiSQL
 
         public string GetWaterMarkString(TextBox tb) => emptyLinesOfTextBoxs[tb];
 
-        public void TbWaterMark_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        public bool IsWaterMarkTextBoxEmpty(TextBox tb) => (emptyLinesOfTextBoxs[tb] == tb.Text);
+        
+        #region События для обработки водяного знака
+        public void TbWm_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
         {
             if (!(sender is TextBox tb))
             {
@@ -71,7 +68,7 @@ namespace SCVtiSQL
             }
         }
 
-        public void TbWaterMark_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        public void TbWm_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
         {
             if (!(sender is TextBox tb))
             {
@@ -86,7 +83,7 @@ namespace SCVtiSQL
                 tb.Text = GetWaterMarkString(tb);
             }
         }
-
+        #endregion
 
         /// <summary>
         /// Создаёт диалоговое окно выбора/создания файла
@@ -94,27 +91,28 @@ namespace SCVtiSQL
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        public void TbWaterMark_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        public void TbWm_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             string[] files = GetNameFiles();
 
-            if (files == null)
-            {
-                return;
-            }
-
             if (sender is TextBox tb)
             {
-                string fs = files[0];
+                if (files == null)
+                {
+                    tb.Text = "";
 
-                FilePath = fs.Substring(0, fs.LastIndexOf('\\') + 1);
+                    return;
+                }
 
-                FileNames = files;
+                //string fs = files[0];
+
+                //FilePath = fs.Substring(0, fs.LastIndexOf('\\') + 1);
+
                 tb.Text = "";
 
-                foreach (var s in FileNames)
+                foreach (var s in files)
                 {
-                    tb.Text += s + " ";
+                    tb.Text += s + "\n";
                 }
             }
         }
@@ -129,6 +127,7 @@ namespace SCVtiSQL
             OpenFileDialog openFileDialog = new OpenFileDialog
             {
                 Filter = "All files *.*|*.*|CSV|*.csv|TXT|*.txt|XML|*.xml",
+                InitialDirectory = Directory.GetCurrentDirectory(),
                 Multiselect = multiselect
             };
 
@@ -139,5 +138,42 @@ namespace SCVtiSQL
 
             return null;
         }
+
+        /// <summary>
+        /// Создаёт диалоговое окно выбора/создания файла
+        /// Путь и имя файла записывает в контент вызвавшего TextBox/
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        public void TbWmXMLfileName_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            SaveFileDialog saveFileDialog = new SaveFileDialog
+            {
+                Filter = "XML|*.xml|All files *.*|*.*",
+                InitialDirectory = Directory.GetCurrentDirectory()
+            };
+
+            if (saveFileDialog.ShowDialog() == false)
+            {
+                return;
+            }
+            
+            string file = saveFileDialog.FileName;
+
+            if (file.ToLower().Contains(".xml") == false)
+            {
+                file += ".xml";
+            }
+
+            XmlReportfileName = file;
+
+            if (sender is TextBox tb)
+            {
+                FilePath = file.Substring(0, file.LastIndexOf('\\') + 1);
+
+                tb.Text = file;
+            }
+        }
+
     }
 }

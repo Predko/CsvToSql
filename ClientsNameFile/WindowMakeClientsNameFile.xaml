@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:CSVtoSQL.ClientsFileName"
         mc:Ignorable="d"
         Title="WindowMakeClientsNameFile" Height="180" Width="600"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen" Closing="WindowMakeClientsNameFile_Closing">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>

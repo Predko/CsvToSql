@@ -13,6 +13,9 @@ using System.Windows.Shapes;
 
 namespace CSVtoSQL.ClientsFileName
 {
+
+    public delegate void TbMouseDoubleClick(object sender, MouseButtonEventArgs e);
+
     /// <summary>
     /// Логика взаимодействия для WindowMakeClientsNameFile.xaml
     /// </summary>
@@ -26,27 +29,31 @@ namespace CSVtoSQL.ClientsFileName
 
         public string XmlClientsNameFile { get; set; }
 
-        private MainWindow mainWimdow;
+        private WaterMarkForTextBox waterMark;
+
+        private TbMouseDoubleClick mouseDoubleClick;
 
 
-        
-        public WindowMakeClientsNameFile()
+
+        public WindowMakeClientsNameFile(WaterMarkForTextBox wm, TbMouseDoubleClick tbMouseDoubleClick)
         {
+            waterMark = wm;
+
+            mouseDoubleClick = tbMouseDoubleClick;
+
             InitializeComponent();
         }
 
-        public void InitializeWaterMark(MainWindow mw)
+        public void InitializeWaterMark()
         {
-            mainWimdow = mw;
+            waterMark.AddWaterMark(tbClientsNameFileIn, emptyCreateXMLfileName, Brushes.Gray);
 
-            mainWimdow.SetWaterMarkString(tbClientsNameFileIn, emptyCreateXMLfileName);
-
-            mainWimdow.SetWaterMarkString(tbClientsNameFileOut, emptyInputfileName);
+            waterMark.AddWaterMark(tbClientsNameFileOut, emptyInputfileName, Brushes.Gray);
         }
 
-        private void TbWm_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) => mainWimdow.TbWm_GotKeyboardFocus(sender, e);
+        private void TbWm_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) => waterMark.TbWm_GotKeyboardFocus(sender, e);
 
-        private void TbWm_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) => mainWimdow.TbWm_LostKeyboardFocus(sender, e);
+        private void TbWm_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) => waterMark.TbWm_LostKeyboardFocus(sender, e);
 
 
         /// <summary>
@@ -55,12 +62,12 @@ namespace CSVtoSQL.ClientsFileName
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void TbWm_MouseDoubleClick(object sender, MouseButtonEventArgs e) => mainWimdow.TbWm_MouseDoubleClick(sender, e);
+        private void TbWm_MouseDoubleClick(object sender, MouseButtonEventArgs e) => mouseDoubleClick(sender, e);
 
         private void BtnCreateXMLNamesClientFile_Click(object sender, RoutedEventArgs e)
         {
             // Проверяем, введены ли имена файлов.
-            if (mainWimdow.IsWaterMarkTextBoxEmpty(tbClientsNameFileIn) == true)
+            if (waterMark.WaterMarkTextBoxIsEmpty(tbClientsNameFileIn) == true)
             {
                 MessageForEmptyTextBox messageBox = new MessageForEmptyTextBox(tbClientsNameFileIn);
 
@@ -69,7 +76,7 @@ namespace CSVtoSQL.ClientsFileName
                 return;
             }
             else
-            if (mainWimdow.IsWaterMarkTextBoxEmpty(tbClientsNameFileOut) == true)
+            if (waterMark.WaterMarkTextBoxIsEmpty(tbClientsNameFileOut) == true)
             {
                 MessageForEmptyTextBox messageBox = new MessageForEmptyTextBox(tbClientsNameFileOut);
 
@@ -98,7 +105,7 @@ namespace CSVtoSQL.ClientsFileName
         {
             SaveFileDialog saveFileDialog = new SaveFileDialog
             {
-                Filter = "TXT|*.txt|All files *.*",
+                Filter = "XML|*.xml|All files *.*|*.*",
             };
 
             if (saveFileDialog.ShowDialog() == true)
@@ -114,6 +121,13 @@ namespace CSVtoSQL.ClientsFileName
             }
 
             return null;
+        }
+
+        private void WindowMakeClientsNameFile_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            waterMark.RemoveWaterMark(tbClientsNameFileOut);
+
+            waterMark.RemoveWaterMark(tbClientsNameFileIn);
         }
     }
 }

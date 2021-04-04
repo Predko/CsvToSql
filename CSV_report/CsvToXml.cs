@@ -17,12 +17,6 @@ namespace CSVtoSQL
     public partial class MainWindow : Window
     {
         /// <summary>
-        /// Массив имён файлов выписок. Выбирается пользователем.
-        /// </summary>
-        string[] FileNamesCSV;
-
-
-        /// <summary>
         /// Открывает диалог для выбора файла с данными клиентов и файла для сохранения данных клиентов в формате XML.
         /// Считывает данные клиентов в таблицу.
         /// </summary>
@@ -49,12 +43,9 @@ namespace CSVtoSQL
         /// <returns>true - если файлы выбраны, false - отмена операции.</returns>
         private bool? OpenDialogMakeClientsNameFile(out string fileIn, out string clientsFileName)
         {
-            WindowMakeClientsNameFile wndMakeClientsNameFile = new WindowMakeClientsNameFile
-            {
-                Owner = this
-            };
+            WindowMakeClientsNameFile wndMakeClientsNameFile = new WindowMakeClientsNameFile(waterMark, TbWm_MouseDoubleClick);
 
-            wndMakeClientsNameFile.InitializeWaterMark(this);
+            wndMakeClientsNameFile.InitializeWaterMark();
 
             bool? res = wndMakeClientsNameFile.ShowDialog();
 
@@ -177,7 +168,7 @@ namespace CSVtoSQL
         /// <param name="e"></param>
         private void BtnConvertCSVtoXML_Click(object sender, RoutedEventArgs e)
         {
-            if (XmlReportfileName.Trim().Length == 0)
+            if (waterMark.WaterMarkTextBoxIsEmpty(TbXMLfileName) == true)
             {
                 MessageForEmptyTextBox messageBox = new MessageForEmptyTextBox(TbXMLfileName);
 
@@ -186,7 +177,16 @@ namespace CSVtoSQL
                 return;
             }
 
-            DataTable income = ConvertDataFromCSVToXML(FileNamesCSV);
+            if (waterMark.WaterMarkTextBoxIsEmpty(tbFilesCSV) == true)
+            {
+                MessageForEmptyTextBox messageBox = new MessageForEmptyTextBox(tbFilesCSV);
+
+                messageBox.Show("Укажите файлы выписки");
+
+                return;
+            }
+
+            DataTable income = ConvertDataFromCSVToXML(FileNamesCSV.ToArray());
 
             if (income == null)
             {
@@ -226,15 +226,6 @@ namespace CSVtoSQL
         /// <returns>Таблица DataTable с данными выписок.</returns>
         private DataTable ConvertDataFromCSVToXML(string[] filesIn)
         {
-            if (filesIn == null)
-            {
-                MessageForEmptyTextBox messageBox = new MessageForEmptyTextBox(tbFilesCSV);
-
-                messageBox.Show("Укажите файлы выписки");
-
-                return null;
-            }
-
             DataTable dtIncome = report.Tables["income"];
 
             dtIncome.Clear();

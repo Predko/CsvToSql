@@ -7,7 +7,7 @@ using System.Windows.Media;
 
 namespace CSVtoSQL
 {
-    class WaterMarkForTextBox
+    public class WaterMarkForTextBox
     {
         private class WaterMarkElement
         {
@@ -15,17 +15,20 @@ namespace CSVtoSQL
             public string waterMark;
             public object obj;
 
-            public Color colorWm;
-            public Color colorTb;
+            public Brush brushWm;
+            public Brush brushTb;
 
-            public WaterMarkElement(TextBox tb, string wm, object o, Color color)
+            public WaterMarkElement(TextBox tb, string wm, object o, Brush brush)
             {
                 textBox = tb;
                 waterMark = wm;
                 obj = o;
 
-                colorTb = ((SolidColorBrush)tb.Background).Color;
-                colorWm = color;
+                brushTb = tb.Foreground;
+                brushWm = brush;
+                
+                tb.Foreground = brushWm;
+                tb.Text = wm;
             }
         }
 
@@ -34,30 +37,30 @@ namespace CSVtoSQL
         /// </summary>
         private readonly Dictionary<TextBox, WaterMarkElement> emptyLinesOfTextBoxs = new Dictionary<TextBox, WaterMarkElement>();
 
-        public void AddWaterMarkString(TextBox tb, string es, Color colorWm, object obj = null)
+        public void AddWaterMark(TextBox tb, string es, Brush brushWm, object obj = null)
         {
-            tb.Foreground = Brushes.Gray;
-
-            tb.Text = es;
-
-            emptyLinesOfTextBoxs.Add(tb, new WaterMarkElement(tb, es, obj, colorWm));
+            emptyLinesOfTextBoxs.Add(tb, new WaterMarkElement(tb, es, obj, brushWm));
         }
 
-        public void RemoveWaterMarkString(TextBox tb) => emptyLinesOfTextBoxs.Remove(tb);
+        public void RemoveWaterMark(TextBox tb) => emptyLinesOfTextBoxs.Remove(tb);
 
         public string GetWmString(TextBox tb) => emptyLinesOfTextBoxs[tb].waterMark;
 
         public void SetWmString(TextBox tb, string wm) => emptyLinesOfTextBoxs[tb].waterMark = wm;
 
-        public Color GetWmColor(TextBox tb) => emptyLinesOfTextBoxs[tb].colorWm;
+        public Brush GetTbBrush(TextBox tb) => emptyLinesOfTextBoxs[tb].brushTb;
 
-        public void SetWmColor(TextBox tb, Color colorWm) => emptyLinesOfTextBoxs[tb].colorWm = colorWm;
+        public void SetTbBrush(TextBox tb, Brush brushTb) => emptyLinesOfTextBoxs[tb].brushTb = brushTb;
+
+        public Brush GetWmBrush(TextBox tb) => emptyLinesOfTextBoxs[tb].brushWm;
+
+        public void SetWmBrush(TextBox tb, Brush brushWm) => emptyLinesOfTextBoxs[tb].brushWm = brushWm;
 
         public object GetObject(TextBox tb) => emptyLinesOfTextBoxs[tb].obj;
         
         public void SetObject(TextBox tb, object obj) => emptyLinesOfTextBoxs[tb].obj = obj;
 
-        public bool IsWaterMarkTextBoxEmpty(TextBox tb) => (emptyLinesOfTextBoxs[tb].waterMark == tb.Text);
+        public bool WaterMarkTextBoxIsEmpty(TextBox tb) => (emptyLinesOfTextBoxs[tb].waterMark == tb.Text);
 
 
         #region События для обработки водяного знака
@@ -74,10 +77,10 @@ namespace CSVtoSQL
             }
 
             //If nothing has been entered yet.
-            if (tb.Foreground == Brushes.Gray)
+            if (tb.Foreground == GetWmBrush(tb))
             {
                 tb.Text = "";
-                tb.Foreground = Brushes.Black;
+                tb.Foreground = GetTbBrush(tb);
             }
         }
 
@@ -96,7 +99,7 @@ namespace CSVtoSQL
             //If nothing was entered, reset default text.
             if (tb.Text.Trim().Length == 0)
             {
-                tb.Foreground = Brushes.Gray;
+                tb.Foreground = GetWmBrush(tb);
 
                 tb.Text = GetWmString(tb);
             }

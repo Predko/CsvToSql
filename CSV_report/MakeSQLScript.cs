@@ -20,7 +20,7 @@ namespace CSVtoSQL
 
         private void MakeSQLScript()
         {
-            if (IsWaterMarkTextBoxEmpty(tbSqlScriptFile) == true)
+            if (waterMark.WaterMarkTextBoxIsEmpty(tbSqlScriptFile) == true)
             {
                 MessageForEmptyTextBox messageBox = new MessageForEmptyTextBox(tbSqlScriptFile);
 

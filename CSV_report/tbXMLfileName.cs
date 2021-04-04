@@ -13,11 +13,13 @@ namespace CSVtoSQL
 {
     public partial class MainWindow : Window
     {
-        private const string emptyXMLfileName = "Введите имя файла XML для записи выписки...";
+        private WaterMarkForTextBox waterMark;
+        
+        private const string emptyXmlFileName = "Введите имя файла XML для записи выписки...";
 
-        private const string emptyReportsfileName = "Введите имена файлов выписок...";
+        private const string emptyReportsFileName = "Введите имена файлов выписок...";
 
-        private const string emptySqlScriptfileName = "Введите имя файла Sql скрипта...";
+        private const string emptySqlScriptFileName = "Введите имя файла Sql скрипта...";
 
         /// <summary>
         /// Словарь, хранящий строки "водяных знаков" текстовых полей и признак множественного выбора файлов.
@@ -29,60 +31,34 @@ namespace CSVtoSQL
         /// </summary>
         public string XmlReportfileName { get; set; } = "";
 
+        /// <summary>
+        /// Массив имён файлов выписок. Выбирается пользователем.
+        /// </summary>
+        private List<string> FileNamesCSV = new List<string>();
+
+        /// <summary>
+        /// Имя файла SQL скрипта.
+        /// </summary>
+        private string SqlScriptFileName;
+
         private void InitializeTextBoxWaterMark()
         {
+            waterMark = new WaterMarkForTextBox();
+
+            waterMark.AddWaterMark(TbXMLfileName, emptyXmlFileName, Brushes.Gray, XmlReportfileName);
             
-            SetWaterMarkString(TbXMLfileName, emptyXMLfileName);
-
-            SetWaterMarkString(tbFilesCSV, emptyReportsfileName);
-
-            SetWaterMarkString(tbSqlScriptFile, emptySqlScriptfileName);
-        }
-        
-        public void SetWaterMarkString(TextBox tb, string es)
-        {
-            tb.Foreground = Brushes.Gray;
-
-            tb.Text = es;
-
-            emptyLinesOfTextBoxs.Add(tb, es);
+            // Массив строк не должен быть равен null, иначе невозможно определить его тип.
+            waterMark.AddWaterMark(tbFilesCSV, emptyReportsFileName, Brushes.Gray, FileNamesCSV);
+            
+            waterMark.AddWaterMark(tbSqlScriptFile, emptySqlScriptFileName, Brushes.Gray, XmlReportfileName);
         }
 
-        public string GetWaterMarkString(TextBox tb) => emptyLinesOfTextBoxs[tb];
-
-        public bool IsWaterMarkTextBoxEmpty(TextBox tb) => (emptyLinesOfTextBoxs[tb] == tb.Text);
-        
         #region События для обработки водяного знака
         public void TbWm_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
-        {
-            if (!(sender is TextBox tb))
-            {
-                return;
-            }
-
-            //If nothing has been entered yet.
-            if (tb.Foreground == Brushes.Gray)
-            {
-                tb.Text = "";
-                tb.Foreground = Brushes.Black;
-            }
-        }
+            => waterMark.TbWm_GotKeyboardFocus(sender, e);
 
         public void TbWm_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
-        {
-            if (!(sender is TextBox tb))
-            {
-                return;
-            }
-
-            //If nothing was entered, reset default text.
-            if (tb.Text.Trim().Length == 0)
-            {
-                tb.Foreground = Brushes.Gray;
-
-                tb.Text = GetWaterMarkString(tb);
-            }
-        }
+            => waterMark.TbWm_LostKeyboardFocus(sender, e);
         #endregion
 
         /// <summary>
@@ -97,23 +73,33 @@ namespace CSVtoSQL
 
             if (sender is TextBox tb)
             {
-                if (files == null)
+                if (files == null || files.Length == 0)
                 {
                     tb.Text = "";
 
                     return;
                 }
 
-                //string fs = files[0];
+                if (waterMark.GetObject(tb) is List<string> ls)
+                {
+                    ls.Clear();
 
-                //FilePath = fs.Substring(0, fs.LastIndexOf('\\') + 1);
-
+                    foreach( string s in files)
+                    {
+                        ls.Add(s);
+                    }
+                }
+                
                 tb.Text = "";
 
-                foreach (var s in files)
+                int i;
+                
+                for (i = 0; i != files.Length - 1; i++)
                 {
-                    tb.Text += s + "\n";
+                    tb.Text += files[i] + "\n";
                 }
+
+                tb.Text += files[i];
             }
         }
 

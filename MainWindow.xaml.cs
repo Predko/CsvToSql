@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -14,6 +15,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Configuration;
+using log4net;
 
 using Microsoft.Win32;
 
@@ -24,7 +27,6 @@ namespace CSVtoSQL
     /// 
     /// Программа предназначена для преобразования банковской выписки интернет-банкинга Белагропромбанка в формате CSV
     /// В SQL скрипт, заносящий новые данные в базу данных.
-    /// Идентификация записи в выписке(чтобы избежать дубликатов) выполняется по "Номеру документа", УНП и дате операции.
     /// Также программа определяет Id плательщика.
     /// Для этого подготавливается текстовый файл с данными клиентов в формате:
     /// Id\tUNP\tNameCompany
@@ -33,6 +35,16 @@ namespace CSVtoSQL
     /// Перед чтением файлов выписок, таблица Clients должна быть заполнена.
     /// Для упрощения доступа к данным клиентов, используется класс ListClients
     /// Данные выписки хранятся в таблице Report.
+    /// Последовательность работы:
+    /// - Создание файла xml с данными клиентов из текстового файла в формате: Id \t УНП(или пробелы) \t Название.
+    /// - Конвертируем банковскую выписку в формате csv в xml файл выписки.
+    /// - Из xml файла выписки и данных клиентов(из xml файла с данными клиентов(загружается автоматически, если есть)),
+    ///   созаётся sql скрипт, обновляющий данные в базе данных.
+    /// Последовательность тестовая.
+    /// После тестирования, для работы программы, достаточно файл выписки.
+    /// Остальные данные будут получены непосредственно из базы данных и обновление данных будет производиться из программы,
+    /// без скрипта.
+    /// 
     /// </summary>
     public partial class MainWindow : Window
     {
@@ -50,12 +62,14 @@ namespace CSVtoSQL
         /// </summary>
         string ClientsFileName;
 
+        private static readonly ILog log = LogManager.GetLogger(typeof(MainWindow));
+
         public MainWindow()
         {
             InitializeComponent();
 
             InitializeTextBoxWaterMark();
-            
+
             ClientsFileName = InitFileName();
 
             reportsInfo = new DataSet("ReportsInfo");
@@ -151,7 +165,7 @@ namespace CSVtoSQL
                 reportsInfo.Tables.Add(dt);
             }
 
-            dt = new DataTable("reports");
+            dt = new DataTable("report");
 
             {
                 dt.Columns.Add(new DataColumn("ClientId", Type.GetType("System.Int32")));

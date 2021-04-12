@@ -16,7 +16,7 @@ namespace CSVtoSQL
 {
     public partial class MainWindow : Window
     {
-        #region Чтения и создание XML файла с данными клиентов. Заполнение таблицы "Clients" данными.
+        #region Чтение и создание XML файла с данными клиентов. Заполнение таблицы "Clients" данными.
         /// <summary>
         /// Открывает диалог для выбора файла с данными клиентов и файла для сохранения данных клиентов в формате XML.
         /// Считывает данные клиентов в таблицу.
@@ -124,8 +124,10 @@ namespace CSVtoSQL
 
             clients.Clear();
 
-            using (StreamReader sr = new StreamReader(fileIn))
+            try
             {
+                using StreamReader sr = new StreamReader(fileIn);
+                
                 string line;
 
                 while ((line = sr.ReadLine()) != null)
@@ -151,12 +153,25 @@ namespace CSVtoSQL
                     clients.Rows.Add(dr);
                 }
             }
+            catch (Exception ex)
+            {
+                MessageAndLogException($"Ошибка чтения файла {fileIn}.\nОперация конвертирования прервана.", ex);
+
+                return;
+            }
 
             clients.AcceptChanges();
 
-            using StreamWriter sw = new StreamWriter(fileOut);
+            try
+            {
+                using StreamWriter sw = new StreamWriter(fileOut);
 
-            listClients.Save(sw);
+                listClients.Save(sw);
+            }
+            catch (Exception ex)
+            {
+                MessageAndLogException($"Ошибка открытия файла {fileOut}.\nОперация конвертирования прервана.", ex);
+            }
         }
         #endregion
 
@@ -196,8 +211,6 @@ namespace CSVtoSQL
                 return;
             }
 
-            using StreamWriter sw = new StreamWriter(TbXMLfileName.Text);
-
             // Сохраняем изменения в списке клиентов, которые были внесены при анализе выписки.
             listClients.Save();
 
@@ -210,7 +223,16 @@ namespace CSVtoSQL
                 listClients.Save(filename);
             }
 
-            reports.WriteXml(sw, XmlWriteMode.WriteSchema);
+            try
+            {
+                using StreamWriter sw = new StreamWriter(TbXMLfileName.Text);
+
+                reports.WriteXml(sw, XmlWriteMode.WriteSchema);
+            }
+            catch (Exception ex)
+            {
+                MessageAndLogException($"Ошибка записи файла {TbXMLfileName.Text}.\nОперация прервана.", ex);
+            }
         }
 
         /// <summary>
@@ -229,7 +251,7 @@ namespace CSVtoSQL
         /// <returns>Таблица DataTable с данными выписок.</returns>
         private DataTable ConvertDataFromCSVToXML(string[] filesIn)
         {
-            DataTable dtReports = reportsInfo.Tables["reports"];
+            DataTable dtReports = reportsInfo.Tables["report"];
 
             dtReports.Clear();
 
@@ -246,81 +268,88 @@ namespace CSVtoSQL
             {
                 tbMessages.Text += $"\nConverting file\n{file}\n";
 
-                using StreamReader sr = new StreamReader(file, encoding: srcEncoding);
-
-                string line;
-
-                while ((line = sr.ReadLine()) != null && !line.Contains("Код банка")) ;
-
-                if (line == null)
+                try
                 {
-                    tbMessages.Text += $"\nConvertation {file} failed.";
+                    using StreamReader sr = new StreamReader(file, encoding: srcEncoding);
 
-                    continue;
-                }
+                    string line;
 
-                int numberRows = 0;
+                    while ((line = sr.ReadLine()) != null && !line.Contains("Код банка")) ;
 
-                while ((line = sr.ReadLine()) != null && !line.Contains("Итого оборотов"))
-                {
-                    string[] s = line.Split(';');
-
-                    DataRow dr = dtReports.NewRow();
-
-                    decimal d1 = string.IsNullOrEmpty(s[3]) ? 0 : decimal.Parse(s[3]);
-                    decimal d2 = string.IsNullOrEmpty(s[4]) ? 0 : decimal.Parse(s[4]);
-                    decimal d3 = string.IsNullOrEmpty(s[5]) ? 0 : decimal.Parse(s[5]);
-
-                    int idClient = 0;
-
-                    if (listClients.Count() != 0)
+                    if (line == null)
                     {
-                        Client client = listClients.Find(s[9], s[8]);
+                        tbMessages.Text += $"\nConvertation {file} failed.";
 
-                        if (client == ListClients.NotFound)
-                        {
-                            // Клиент не найден, предлагаем пользователю выбрать клиента из списка.
-                            WindowChoosingClientName choosingClientName = new WindowChoosingClientName(listClients);
-
-                            choosingClientName.DescriptionOfPurpose.Text = $"Номер ПП: {s[2].Trim('\"', '=')} Дата: {s[6]} Сумма: {s[5]}\n" + s[7];
-
-                            if (choosingClientName.ShowDialog() == false)
-                            {
-                                MessageBox.Show("Операция конвертации отменена");
-
-                                return null;
-                            }
-
-                            client = choosingClientName.SelectedClient;
-
-                            client.UNP = s[9];
-                        }
-
-                        idClient = client.Id;
+                        continue;
                     }
 
-                    ///    0 Код банка; 1 Счет-корреспондент; 2 Номер документа;
-                    ///    3 Обороты: дебет; 4 Обороты: кредит; 5 В эквиваленте; 6 Дата операции;
-                    ///    7 Назначение; 8 Наименование контрагента; 9 УНП контрагента;
-                    dr.ItemArray = new object[] { idClient, s[0], s[1].Trim('\"', '='), s[2].Trim('\"', '='),
+                    int numberRows = 0;
+
+                    while ((line = sr.ReadLine()) != null && !line.Contains("Итого оборотов"))
+                    {
+                        string[] s = line.Split(';');
+
+                        DataRow dr = dtReports.NewRow();
+
+                        decimal d1 = string.IsNullOrEmpty(s[3]) ? 0 : decimal.Parse(s[3]);
+                        decimal d2 = string.IsNullOrEmpty(s[4]) ? 0 : decimal.Parse(s[4]);
+                        decimal d3 = string.IsNullOrEmpty(s[5]) ? 0 : decimal.Parse(s[5]);
+
+                        int idClient = 0;
+
+                        if (listClients.Count() != 0)
+                        {
+                            Client client = listClients.Find(s[9], s[8]);
+
+                            if (client == ListClients.NotFound || client.Multiple == true)
+                            {
+                                // Клиент не найден, предлагаем пользователю выбрать клиента из списка.
+                                WindowChoosingClientName choosingClientName = new WindowChoosingClientName(listClients);
+
+                                choosingClientName.DescriptionOfPurpose.Text = $"Номер ПП: {s[2].Trim('\"', '=')} Дата: {s[6]} Сумма: {s[5]}\n" + s[7];
+
+                                if (choosingClientName.ShowDialog() == false)
+                                {
+                                    MessageBox.Show("Операция конвертации отменена");
+
+                                    return null;
+                                }
+
+                                client = choosingClientName.SelectedClient;
+
+                                client.UNP = s[9];
+                            }
+
+                            idClient = client.Id;
+                        }
+
+                        ///    0 Код банка; 1 Счет-корреспондент; 2 Номер документа;
+                        ///    3 Обороты: дебет; 4 Обороты: кредит; 5 В эквиваленте; 6 Дата операции;
+                        ///    7 Назначение; 8 Наименование контрагента; 9 УНП контрагента;
+                        dr.ItemArray = new object[] { idClient, s[0], s[1].Trim('\"', '='), s[2].Trim('\"', '='),
                                                   d1, d2, d3, DateTime.Parse(s[6]).Date,
                                                   s[7], s[8], s[9]
                                                 };
 
-                    dtReports.Rows.Add(dr);
+                        dtReports.Rows.Add(dr);
 
-                    tbMessages.Text += $".";
+                        tbMessages.Text += $".";
 
-                    numberRows++;
+                        numberRows++;
 
-                    debit += d1;
+                        debit += d1;
 
-                    credit += d2;
+                        credit += d2;
+                    }
+
+                    tbMessages.Text += $"\nDone. {numberRows} records.";
+
+                    totalRecords += numberRows;
                 }
-
-                tbMessages.Text += $"\nDone. {numberRows} records.";
-
-                totalRecords += numberRows;
+                catch (Exception ex)
+                {
+                    MessageAndLogException($"Конвертация файла {file} не удалась.\nОперация прервана", ex);
+                }
             }
 
             tbMessages.Text += $"\nTotal {totalRecords} records.\nDebit = {debit}, Credit = {credit}";
@@ -328,5 +357,17 @@ namespace CSVtoSQL
             return dtReports;
         }
         #endregion
+
+        /// <summary>
+        /// Вывод сообщения и запись в лог файл.
+        /// </summary>
+        /// <param name="msg"></param>
+        /// <param name="ex"></param>
+        private void MessageAndLogException(string msg, Exception ex)
+        {
+            MessageBox.Show(msg);
+
+            log.Warn(msg + "\n" + ex.ToString());
+        }
     }
 }

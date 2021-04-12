@@ -7,9 +7,17 @@ using System.Windows;
 using CSVtoSQL;
 using System.Linq;
 using System.Collections;
+using log4net;
 
 namespace CSVtoSQL
 {
+    /// <summary>
+    /// Класс - обёртка строки DataRow, содержащей данные о клиенте:
+    ///  Id - клиента,
+    ///  UNP - УНП клиента,
+    ///  Name - название,
+    ///  Multiple - признак того, что несколько клиентов может соответствовать этому УНП.
+    /// </summary>
     public class Client : IComparable<Client>, IComparable
     {
         private readonly DataRow clientRow;
@@ -35,15 +43,9 @@ namespace CSVtoSQL
             set => clientRow[3] = value;
         }
 
-        public Client(int id, string uNP, string name, bool multiple = false)
-        {
-            Id = id;
-            UNP = uNP;
-            Name = name;
-            Multiple = multiple;
-        }
-
         public Client(DataRow dr) => clientRow = dr;
+
+        public Client() {}
 
         override public string ToString()
         {
@@ -56,7 +58,13 @@ namespace CSVtoSQL
 
         public int CompareTo(object obj)
         {
-            return Name.CompareTo(((Client)obj).Name);
+            if (obj is Client c)
+            {
+                return Name.CompareTo(((Client)obj).Name);
+            }
+
+            return Name.CompareTo(obj.ToString());
+            
         }
 
         public override bool Equals(object obj)
@@ -71,7 +79,12 @@ namespace CSVtoSQL
                 return false;
             }
 
-            return Name == ((Client)obj).Name;
+            if (obj is Client c)
+            {
+                return Name == c.Name;
+            }
+
+            return (object)this == obj;
         }
 
         public override int GetHashCode()
@@ -139,6 +152,8 @@ namespace CSVtoSQL
         private readonly DataTable clients;
 
         public string FileName { get; set; }
+
+        private static readonly ILog log = LogManager.GetLogger(typeof(ListClients));
 
         public ListClients(DataTable dtClients, string file = null)
         {
@@ -288,9 +303,22 @@ namespace CSVtoSQL
 
             FileName = file;
 
-            using StreamReader streamReader = new StreamReader(file);
+            try
+            {
+                using StreamReader streamReader = new StreamReader(file);
 
-            return Load(streamReader);
+                bool res = Load(streamReader);
+
+                return res;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка операций с файлом {file} .");
+
+                log.Warn(ex.ToString());
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -333,7 +361,17 @@ namespace CSVtoSQL
             
             clients.Clear();
 
-            clients.ReadXml(streamReader);
+            try
+            {
+                clients.ReadXml(streamReader);
+            }
+            catch(Exception ex)
+            {
+                string s = $"Не удалось загрузить таблицу данных из XML файла.";
+                MessageBox.Show(s);
+
+                log.Warn(s + "\n" + ex.ToString());
+            }
 
             clients.AcceptChanges();
 
@@ -352,9 +390,19 @@ namespace CSVtoSQL
                 file = FileName;
             }
 
-            using StreamWriter sw = new StreamWriter(file);
+            try
+            {
+                using StreamWriter sw = new StreamWriter(file);
 
-            Save(sw);
+                Save(sw);
+            }
+            catch (Exception ex)
+            {
+                string s = $"Не сохранить таблицу данных в XML файл.";
+                MessageBox.Show(s);
+
+                log.Warn(s + "\n" + ex.ToString());
+            }
         }
 
         /// <summary>

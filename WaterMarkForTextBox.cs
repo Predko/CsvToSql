@@ -7,8 +7,17 @@ using System.Windows.Media;
 
 namespace CSVtoSQL
 {
+    /// <summary>
+    /// Класс, обеспечивающий создание водяного знака в текстовом поле.
+    /// Позволяет, добавить и удалить водяной знак, определить есть ли в поле запись
+    /// и добавить или получить некий объект, соответствующий данному текстовому полю.
+    /// </summary>
     public class WaterMarkForTextBox
     {
+        /// <summary>
+        /// Хранит данные для создания водяного знака для TextBox.
+        /// Также обеспечивает хранение элемента данных типа Object, кисть водяного знака и строку.
+        /// </summary>
         private class WaterMarkElement
         {
             public TextBox textBox;

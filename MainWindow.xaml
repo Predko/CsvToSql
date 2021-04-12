@@ -63,28 +63,44 @@
                      MinWidth="400" Height="150"/>
         </DockPanel>
 
-        <StackPanel Grid.Column="2" Grid.Row="0" Grid.RowSpan="2">
-            <TextBlock Text="Исходный XML файл выписки:" Margin="10 10 10 5"/>
-            <TextBox x:Name="tbXmlReportFile"
+        <DockPanel Grid.Column="2" Grid.Row="0" Grid.RowSpan="2" LastChildFill="True">
+            <StackPanel DockPanel.Dock="Top">
+                <TextBlock Text="Исходный XML файл выписки:" Margin="10 10 10 5"/>
+                <TextBox x:Name="TbXmlReportFile"
                     HorizontalContentAlignment="Stretch"
                     VerticalAlignment="Center"
                     MinWidth="300"
                     Margin="10 5 10 5" 
                     GotKeyboardFocus="TbWm_GotKeyboardFocus" LostKeyboardFocus="TbWm_LostKeyboardFocus" MouseDoubleClick="TbWm_MouseDoubleClick" 
                     ToolTip="Двойной клик - для выбора файла на диске"/>
-            <TextBlock Text="Файл SQL скрипта:" Margin="10 10 10 5"/>
-            <TextBox x:Name="tbSqlScriptFile"
+                <TextBlock Text="Файл SQL скрипта:" Margin="10 10 10 5"/>
+                <TextBox x:Name="TbSqlScriptFile"
                     HorizontalContentAlignment="Stretch"
                     VerticalAlignment="Center"
                     MinWidth="300"
                     Margin="10 5 10 5" 
-                    GotKeyboardFocus="TbWm_GotKeyboardFocus" LostKeyboardFocus="TbWm_LostKeyboardFocus" MouseDoubleClick="TbWm_MouseDoubleClick" 
+                    GotKeyboardFocus="TbWm_GotKeyboardFocus" LostKeyboardFocus="TbWm_LostKeyboardFocus" MouseDoubleClick="TbSqlScriptFile_MouseDoubleClick" 
                     ToolTip="Двойной клик - для выбора файла на диске"/>
-            <Button x:Name="BtnMakeSQLScript" Content="Make SQL script" 
+                <DockPanel LastChildFill="True">
+                    <TextBlock Text="Название базы данных:" Margin="10 10 10 5" DockPanel.Dock="Left"/>
+                    <TextBox x:Name="TbNameDataBase"
+                    HorizontalContentAlignment="Stretch"
+                    VerticalAlignment="Center"
+                    Margin="10 5 10 5"/>
+                </DockPanel>
+                <Button x:Name="BtnMakeSQLScript" Content="Make SQL script" 
                     Margin="10 5 10 5"
                     Click="BtnMakeSQLScript_Click"
                     ToolTip="Создаёт SQL скрипт файл из банковских выписок."/>
-        </StackPanel>
+            </StackPanel>
+            <FlowDocumentScrollViewer x:Name="FdsvMakeSqlScriptText" Margin="5" IsToolBarVisible="True">
+                <FlowDocument x:Name="FdMakeSqlScriptText">
+                    <Paragraph x:Name="ParMakeSqlScriptText">
+                        <Run>--SQL скрипт для заполнения таблиц базы данных, данными из банковских выписок.</Run>
+                    </Paragraph>
+                </FlowDocument>
+            </FlowDocumentScrollViewer>
+        </DockPanel>
 
     </Grid>
 </Window>

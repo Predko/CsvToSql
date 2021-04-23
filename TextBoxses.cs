@@ -19,13 +19,8 @@ namespace CSVtoSQL
         private WaterMarkForTextBox waterMark;
 
         #region Строки водяных знаков для соответствующих текстовых полей.
-        private const string emptyXmlFileName = "Введите имя файла XML для записи выписки...";
-
         private const string emptyReportsFileName = "Введите имена файлов выписок...";
 
-        private const string emptyReportsXmlFileName = "Введите имя файла выписки...";
-
-        private const string emptySqlScriptFileName = "Введите имя файла Sql скрипта...";
         #endregion
 
         /// <summary>
@@ -52,13 +47,7 @@ namespace CSVtoSQL
         {
             waterMark = new WaterMarkForTextBox();
 
-            waterMark.AddWaterMark(TbXMLfileName, emptyXmlFileName, Brushes.Gray, XmlReportfileName);
-            
             waterMark.AddWaterMark(tbFilesCSV, emptyReportsFileName, Brushes.Gray, FileNamesCSV);
-
-            waterMark.AddWaterMark(TbSqlScriptFile, emptySqlScriptFileName, Brushes.Gray, SqlScriptFileName);
-
-            waterMark.AddWaterMark(TbXmlReportFile, emptyReportsXmlFileName, Brushes.Gray, XmlReportfileName);
         }
 
         #region События для обработки водяного знака

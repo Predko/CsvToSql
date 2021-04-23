@@ -8,6 +8,7 @@ using CSVtoSQL;
 using System.Linq;
 using System.Collections;
 using log4net;
+using System.Data.SqlClient;
 
 namespace CSVtoSQL
 {
@@ -24,23 +25,54 @@ namespace CSVtoSQL
 
         public int Id { get => (int)clientRow[0]; set => clientRow[0] = value; }
 
-        public string UNP
+        public string Name
         {
-            get => (string)clientRow[1];
+            get
+            {
+                if (clientRow[1] is string name)
+                {
+                    return name;
+                }
+
+                return "";
+            }
+
             set => clientRow[1] = value ?? "";
         }
 
-        public string Name
+        public string UNP
         {
-            get => (string)clientRow[2];
+            get
+            {
+                if (clientRow[2] is string unp)
+                {
+                    return unp;
+                }
+
+                return "";
+            }
+
             set => clientRow[2] = value ?? "";
         }
 
-        // Признак бютжетной организации. Если true - значит этот УНП может соответствовать нескольким клиентам.
-        public bool Multiple 
-        { 
-            get => (bool)clientRow[3];
-            set => clientRow[3] = value;
+        public static string GetName(DataRow dr)
+        {
+            if (dr[1] is string name)
+            {
+                return name;
+            }
+
+            return "";
+        }
+
+        public static string GetUNP(DataRow dr)
+        {
+            if (dr[2] is string unp)
+            {
+                return unp;
+            }
+
+            return "";
         }
 
         public Client(DataRow dr) => clientRow = dr;
@@ -151,6 +183,11 @@ namespace CSVtoSQL
         /// 
         private readonly DataTable clients;
 
+        /// <summary>
+        /// УНП бюджетных организаций.
+        /// </summary>
+        public string UnpBudget;
+
         public string FileName { get; set; }
 
         private static readonly ILog log = LogManager.GetLogger(typeof(ListClients));
@@ -168,8 +205,8 @@ namespace CSVtoSQL
         /// Возвращает число записей в таблице.
         /// </summary>
         /// <returns>Число записей в таблице.</returns>
-        public int Count() => clients.Rows.Count;
-        
+        public int Count => clients.Rows.Count;
+
         /// <summary>
         /// Заполняет список информацией о клиентах из DataTable с удалением имеющейся информации
         /// </summary>
@@ -199,21 +236,21 @@ namespace CSVtoSQL
         /// Добавляет в список данные об одном клиенте.
         /// </summary>
         /// <param name="row">Информация о клиенте.</param>
-        public void Add(DataRow row) => Add(row[0], row[1], row[2], row[3]);
+        public void Add(DataRow row) => Add(row[0], Client.GetName(row), Client.GetUNP(row));
 
         /// <summary>
         /// Добавляет в список данные об одном клиенте.
         /// </summary>
         /// <param name="client">Объект типа Client</param>
-        public void Add(Client client) => Add(client.Id, client.UNP, client.Name, client.Multiple);
+        public void Add(Client client) => Add(client.Id, client.Name, client.UNP);
 
         /// <summary>
         /// Добавляет наименование клиента с данным id.
         /// </summary>
         /// <param name="id">Id клиента</param>
-        /// <param name="unp">УНП</param>
         /// <param name="name">Наименование</param>
-        public void Add(object id, object unp, object name, object multiple)
+        /// <param name="unp">УНП</param>
+        public void Add(object id, object name, object unp)
         {
             DataRow res = clients.Rows.Find(id);
 
@@ -222,7 +259,7 @@ namespace CSVtoSQL
             {
                 DataRow row = clients.NewRow();
 
-                row.ItemArray = new object[] { id, unp, name, multiple };
+                row.ItemArray = new object[] { id, name, unp };
 
                 clients.Rows.Add(row);
 
@@ -230,9 +267,8 @@ namespace CSVtoSQL
             }
 
             // Такая запись есть, переписываем её значения.
-            res[1] = unp;
-            res[2] = name;
-            res[3] = multiple;
+            res[1] = name;
+            res[2] = unp;
         }
 
         /// <summary>
@@ -244,19 +280,20 @@ namespace CSVtoSQL
         /// Поиск клиента по УНП и названию.
         /// </summary>
         /// <param name="nameClient"></param>
+        /// <param name="unpClient"></param>
         /// <returns>Экземпляр класса Client для данного клиента, если поиск успешен, иначе ListClients.NotFound = null</returns>
-        public Client Find(string unpClient, string nameClient)
+        public Client Find(string nameClient, string unpClient)
         {
+            if (unpClient == UnpBudget) //(string)clients.Rows[i][2]
+            {
+                // Этот УНП не может идентифицировать плательщика.
+                return NotFound;
+            }
+                
             for(int i = 0; i != clients.Rows.Count; i++)
             {
-                if ((bool)clients.Rows[i][3] == true)
-                {
-                    // Этот УНП не может идентифицировать плательщика.
-                    return NotFound;
-                }
-                
-                string unp = (string)clients.Rows[i][1];
-                string name = (string)clients.Rows[i][2];
+                string name = Client.GetName(clients.Rows[i]);
+                string unp = Client.GetUNP(clients.Rows[i]);
 
                 if (unp.Length == 0)
                 {
@@ -283,7 +320,7 @@ namespace CSVtoSQL
         /// </summary>
         /// <returns>True - если данные успешно загружены.</returns>
         public bool Load() => Load(FileName);
- 
+
         /// <summary>
         /// Загружает список клиентов из указанного XML файла.
         /// </summary>

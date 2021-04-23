@@ -14,73 +14,24 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height=".1*"/>
+            <RowDefinition Height=".4*"/>
             <RowDefinition Height="1*"/>
         </Grid.RowDefinitions>
-        <StackPanel Grid.Column="0" Grid.Row="0" VerticalAlignment="Center" Orientation="Horizontal">
-            <Button Content="Спискок организаций" 
-                    Height="20" Margin="10,5,10,5" Padding="5 0 5 0" 
-                    VerticalAlignment="Center" 
-                    Click="BtnOpenClientsNameFile_Click"
-                    ToolTip="Открывает выбранный файл со списком организаций"/>
-            <Button Content="Создать XML файл со списком организаций" 
-                    Height="20" Margin="10,5,10,5" Padding="5 0 5 0" 
-                    VerticalAlignment="Center" 
-                    Click="BtnConvertClientsFileToXML_Click"
-                    ToolTip="Создаёт файл со списком организаций из текстового файла"/>
-        </StackPanel>
         <GridSplitter Grid.Column="1" ShowsPreview="False" Width="4" HorizontalAlignment="Center"/>
-        <DockPanel Grid.Column="0" Grid.Row="1" LastChildFill="True">
-            <Button x:Name="TBlkBtnConvertCSVtoXMLToolTip" DockPanel.Dock="Top" Content="Преобразование CSV файлов выписки в XML файл " 
-                    Margin="10 5 10 5" 
-                    IsEnabled="true"
-                    Click="BtnConvertCSVtoXML_Click"
-                    ToolTipService.ShowOnDisabled="True"
-                    >
-                <Button.ToolTip>
-                    <TextBlock x:Name="TblkBtnConvertCSVtoXMLToolTip"  Text = ""/>
-                </Button.ToolTip>
-            </Button>
-            <TextBox x:Name="TbXMLfileName"  MinWidth="400" Margin="10 5 10 5"  DockPanel.Dock="Top"
-                     GotKeyboardFocus="TbWm_GotKeyboardFocus" LostKeyboardFocus="TbWm_LostKeyboardFocus"
-                     MouseDoubleClick="TbWmXMLfileName_MouseDoubleClick"
-                     ToolTip="Двойной клик - для выбора файла на диске"/>
+        <DockPanel Grid.Column="0" Grid.Row="0" LastChildFill="True">
+            <TextBlock Text="Файлы выписок:" DockPanel.Dock="Top" Margin="10 5 10 5"/>
             <TextBox x:Name="tbFilesCSV" DockPanel.Dock="Top"
                      TextWrapping="Wrap"
-                     VerticalAlignment="Center"
-                     MinWidth="400"  Height="150"
+                     MinWidth="400"
                      Margin="10 5 10 5"
                      ScrollViewer.VerticalScrollBarVisibility="Auto"
                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
                      GotKeyboardFocus="TbWm_GotKeyboardFocus" LostKeyboardFocus="TbWm_LostKeyboardFocus" MouseDoubleClick="TbWm_MouseDoubleClick" 
                      ToolTip="Двойной клик - для выбора файла на диске"/>
-            <TextBox x:Name="tbMessages"
-                     TextWrapping="Wrap"
-                     VerticalAlignment="Stretch"
-                     Margin="10 5 10 10"
-                     ScrollViewer.VerticalScrollBarVisibility="Auto"
-                     ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                     MinWidth="400" Height="150"/>
         </DockPanel>
 
-        <DockPanel Grid.Column="2" Grid.Row="0" Grid.RowSpan="2" LastChildFill="True">
+        <DockPanel Grid.Column="2" Grid.Row="0" LastChildFill="True">
             <StackPanel DockPanel.Dock="Top">
-                <TextBlock Text="Исходный XML файл выписки:" Margin="10 10 10 5"/>
-                <TextBox x:Name="TbXmlReportFile"
-                    HorizontalContentAlignment="Stretch"
-                    VerticalAlignment="Center"
-                    MinWidth="300"
-                    Margin="10 5 10 5" 
-                    GotKeyboardFocus="TbWm_GotKeyboardFocus" LostKeyboardFocus="TbWm_LostKeyboardFocus" MouseDoubleClick="TbWm_MouseDoubleClick" 
-                    ToolTip="Двойной клик - для выбора файла на диске"/>
-                <TextBlock Text="Файл SQL скрипта:" Margin="10 10 10 5"/>
-                <TextBox x:Name="TbSqlScriptFile"
-                    HorizontalContentAlignment="Stretch"
-                    VerticalAlignment="Center"
-                    MinWidth="300"
-                    Margin="10 5 10 5" 
-                    GotKeyboardFocus="TbWm_GotKeyboardFocus" LostKeyboardFocus="TbWm_LostKeyboardFocus" MouseDoubleClick="TbSqlScriptFile_MouseDoubleClick" 
-                    ToolTip="Двойной клик - для выбора файла на диске"/>
                 <DockPanel LastChildFill="True">
                     <TextBlock Text="Название базы данных:" Margin="10 10 10 5" DockPanel.Dock="Left"/>
                     <TextBox x:Name="TbNameDataBase"
@@ -88,12 +39,27 @@
                     VerticalAlignment="Center"
                     Margin="10 5 10 5"/>
                 </DockPanel>
-                <Button x:Name="BtnMakeSQLScript" Content="Make SQL script" 
+                <Button x:Name="BtnUpdateDataBase" Content="Обновить базу данных." 
                     Margin="10 5 10 5"
-                    Click="BtnMakeSQLScript_Click"
+                    Click="BtnUpdateDataBase_Click"
                     ToolTip="Создаёт SQL скрипт файл из банковских выписок."/>
             </StackPanel>
-            <FlowDocumentScrollViewer x:Name="FdsvMakeSqlScriptText" Margin="5" IsToolBarVisible="True">
+        </DockPanel>
+
+        <DockPanel Grid.Row="1" Grid.ColumnSpan="3">
+            <StatusBar  DockPanel.Dock="Bottom" Height="20">
+                <DockPanel LastChildFill="True">
+                    <ProgressBar x:Name="PbProgress" DockPanel.Dock="Left"
+                                 Minimum="0" Maximum="4" Value="0"
+                                 Margin="10 0 5 0"
+                                 MinWidth="100"
+                                 MinHeight="15"/>
+                    <TextBlock x:Name="TblProgressText" 
+                               Margin="20 0 10 0"/>
+                </DockPanel>
+            </StatusBar>
+            <FlowDocumentScrollViewer x:Name="FdsvMakeSqlScriptText" 
+                                      Margin="5" IsToolBarVisible="True">
                 <FlowDocument x:Name="FdMakeSqlScriptText">
                     <Paragraph x:Name="ParMakeSqlScriptText">
                         <Run>--SQL скрипт для заполнения таблиц базы данных, данными из банковских выписок.</Run>
@@ -101,6 +67,5 @@
                 </FlowDocument>
             </FlowDocumentScrollViewer>
         </DockPanel>
-
     </Grid>
 </Window>

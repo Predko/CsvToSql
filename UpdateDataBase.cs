@@ -23,9 +23,20 @@ namespace CSVtoSQL
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void BtnMakeSQLScript_Click(object sender, RoutedEventArgs e)
+        private void BtnUpdateDataBase_Click(object sender, RoutedEventArgs e)
         {
-            MakeSQLScript();
+            if (waterMark.WaterMarkTextBoxIsEmpty(tbFilesCSV) == true)
+            {
+                MessageForEmptyTextBox messageBox = new MessageForEmptyTextBox(tbFilesCSV);
+
+                messageBox.Show("Укажите файлы выписки");
+
+                return;
+            }
+
+            ConvertDataFromCSVToReportDataTable(FileNamesCSV.ToArray());
+            
+            UpdateDataBase();
         }
 
         #region Имеющиеся таблицы и их поля.
@@ -78,62 +89,25 @@ namespace CSVtoSQL
         #endregion
 
         /// <summary>
-        /// Читает данные банковских выписок из указанного XML файла 
-        /// и создаёт SQL скрипт для занесения этих данных в базу данных.
+        /// Создаёт SQL скрипт из данных банковской выписки для обновления базы данных.
         /// </summary>
-        private void MakeSQLScript()
+        private void UpdateDataBase()
         {
             static bool DataTableIsEmpty(DataTable dt) => dt.Rows.Count == 0;
 
             #region Проверка, указаны ли имена файлов и готова ли таблица данных для формирования sql скрипта
-            if (TbNameDataBase.Text.Length == 0)
-            {
-                MessageForEmptyTextBox messageBox = new MessageForEmptyTextBox(TbNameDataBase);
 
-                messageBox.Show("Укажите имя базы данных");
-
-                return;
-            }
-            
-            if (waterMark.WaterMarkTextBoxIsEmpty(TbSqlScriptFile) == true)
-            {
-                MessageForEmptyTextBox messageBox = new MessageForEmptyTextBox(TbSqlScriptFile);
-
-                messageBox.Show("Укажите конечный файл для SQL скрипта");
-
-                return;
-            }
-
-            DataTable report = reportsInfo.Tables["report"];
+            DataTable report = storage["report"];
 
             if (DataTableIsEmpty(report))
             {
-                if (waterMark.WaterMarkTextBoxIsEmpty(TbXmlReportFile) == true)
-                {
-                    MessageForEmptyTextBox messageBox = new MessageForEmptyTextBox(TbXmlReportFile);
+                MessageBox.Show("Введите имя файла XML для чтения выписки.");
 
-                    messageBox.Show("Введите имя файла XML для чтения выписки.");
-
-                    return;
-                }
-
-                try
-                {
-                    report.ReadXml(TbXmlReportFile.Text);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Не удалось прочитать данные из файла {TbXmlReportFile.Text}.\n" +
-                                    "Возможно файл недоступен или имеет формат, не соответствующий формату выписки.");
-
-                    log.Warn($"Error reading file {TbXmlReportFile.Text}\n" + ex.ToString());
-
-                    return;
-                }
+                return;
             }
             #endregion
 
-            DataTable reportChanges = reportsInfo.Tables["report"].GetChanges();
+            DataTable reportChanges = storage["report"].GetChanges();
 
             // Проверка на наличие изменений данных
             if (DataTableIsEmpty(reportChanges))
@@ -156,7 +130,7 @@ namespace CSVtoSQL
 
             try
             {
-                using StreamWriter streamWriter = new StreamWriter(TbSqlScriptFile.Text);
+                using StreamWriter streamWriter = new StreamWriter("1.sql"); //"TbSqlScriptFile.Text);
 
                 string sqlHeader = $"USE \"{TbNameDataBase.Text}\"\n\n" +
                                    "GO\n\n";

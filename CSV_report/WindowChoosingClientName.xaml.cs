@@ -10,6 +10,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.ComponentModel;
+using System.Globalization;
+using System.Collections.ObjectModel;
 
 namespace CSVtoSQL.CSV_report
 {
@@ -18,7 +20,7 @@ namespace CSVtoSQL.CSV_report
     /// </summary>
     public partial class WindowChoosingClientName : Window
     {
-        private readonly ListClients listClients;
+        private readonly ObservableCollection<Client> list = new ObservableCollection<Client>();
 
         public Client SelectedClient { get; set; }
 
@@ -27,20 +29,44 @@ namespace CSVtoSQL.CSV_report
         {
             InitializeComponent();
 
-            listClients = lc;
-
-            InitListBox();
-
-            DescriptionOfPurpose.Width = listBoxClients.Width;
+            InitListBox(lc);
         }
 
-        private void InitListBox()
+        private void InitListBox(ListClients lc)
         {
-            foreach (var client in listClients)
+            int maxCountStirng = 0;
+
+            Client maxStringClient = null;
+
+            foreach (Client c in lc)
             {
-                listBoxClients.Items.Add(client);
+                list.Add(c);
+                
+                if (maxCountStirng < c.Name.Length)
+                {
+                    maxCountStirng = c.Name.Length;
+
+                    maxStringClient = c;
+                }
             }
 
+            string text = maxStringClient.ToString();
+
+            FormattedText ft = new FormattedText(text, CultureInfo.CurrentUICulture, listBoxClients.FlowDirection,
+                                                 new Typeface(listBoxClients.FontFamily, listBoxClients.FontStyle,
+                                                              listBoxClients.FontWeight, listBoxClients.FontStretch),
+                                                 listBoxClients.FontSize, listBoxClients.Foreground, VisualTreeHelper.GetDpi(listBoxClients).PixelsPerDip);
+
+            listBoxClients.Width = listBoxClients.Margin.Left + listBoxClients.Margin.Right
+                                 + listBoxClients.BorderThickness.Left + listBoxClients.BorderThickness.Right
+                                 + Math.Floor(ft.Width + 1) + Math.Floor(SystemParameters.VerticalScrollBarWidth + 5);
+
+
+
+            DescriptionOfPurpose.Width = listBoxClients.Width;
+
+            listBoxClients.ItemsSource = list;
+            
             listBoxClients.Items.SortDescriptions.Add(new SortDescription("", ListSortDirection.Ascending));
         }
 

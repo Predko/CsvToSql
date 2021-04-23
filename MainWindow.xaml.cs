@@ -19,6 +19,7 @@ using System.Configuration;
 using log4net;
 
 using Microsoft.Win32;
+using System.Data.SqlClient;
 
 namespace CSVtoSQL
 {
@@ -50,7 +51,12 @@ namespace CSVtoSQL
     {
         private readonly ListClients listClients;
 
-        private readonly DataSet reportsInfo;
+        private StorageDataBase storage;
+
+        /// <summary>
+        /// УНП бюджетных организаций.
+        /// </summary>
+        private string UnpBudget = "500563252";
 
         /// <summary>
         /// Путь к рабочему каталогу.
@@ -70,21 +76,33 @@ namespace CSVtoSQL
 
             InitializeTextBoxWaterMark();
 
-            ClientsFileName = InitFileName();
+            InitSqlConnection();
 
-            reportsInfo = new DataSet("ReportsInfo");
+            ClientsFileName = InitFileName();
 
             InitDataTables();
 
-            listClients = new ListClients(reportsInfo.Tables["clients"], ClientsFileName);
+            listClients = new ListClients(storage["Clients"], ClientsFileName)
+            {
+                UnpBudget = UnpBudget
+            };
 
-            if (listClients.Load() == false)
+            if (listClients.Count == 0)
             {
                 // Не удалось загрузить файл с данными о клиентах - делаем кнопку чтения выписок неактивной.
-                TBlkBtnConvertCSVtoXMLToolTip.IsEnabled = false;
+                BtnUpdateDataBase.IsEnabled = false;
             }
 
-            ChangeBtnConvertCSVtoXMLToolTip();
+            this.DataContext = this;
+        }
+
+        private void InitSqlConnection()
+        {
+            // Читаем строку подключения к базе данных clients из файла конфигурации
+            string connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
+
+            storage = new StorageDataBase(connectionString);
+
         }
 
         /// <summary>
@@ -149,20 +167,18 @@ namespace CSVtoSQL
         /// </summary>
         private void InitDataTables()
         {
-            DataTable dt = new DataTable("clients");
-            
+            DataTable dt = new DataTable("TmpClients");
+
             {
                 dt.Columns.Add(new DataColumn("Id", Type.GetType("System.Int32")) { Unique = true });
 
-                dt.Columns.Add(new DataColumn("UNP", Type.GetType("System.String")));
-
                 dt.Columns.Add(new DataColumn("NameCompany", Type.GetType("System.String")));
 
-                dt.Columns.Add(new DataColumn("Multiple", Type.GetType("System.Boolean")));
+                dt.Columns.Add(new DataColumn("UNP", Type.GetType("System.String")));
 
                 dt.PrimaryKey = new DataColumn[] { dt.Columns["Id"] };
 
-                reportsInfo.Tables.Add(dt);
+                storage.Add(dt);
             }
 
             dt = new DataTable("report");
@@ -190,7 +206,7 @@ namespace CSVtoSQL
 
                 dt.Columns.Add(new DataColumn("UNP", Type.GetType("System.String")));
 
-                reportsInfo.Tables.Add(dt);
+                storage.Add(dt);
             }
         }
     }

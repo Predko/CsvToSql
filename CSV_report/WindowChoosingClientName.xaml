@@ -34,6 +34,5 @@
             <Button IsCancel="True" MinWidth="80" Margin="10" HorizontalAlignment="Right">Cancel</Button>
             <Button IsDefault="True" Click="AcceptId_Click" MinWidth="80" Margin="10" HorizontalAlignment="Right">Ok</Button>
         </StackPanel>
-
     </Grid>
 </Window>

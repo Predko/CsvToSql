@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace CSVtoSQL
+namespace CSVtoDataBase
 {
     /// <summary>
     /// Класс, обеспечивающий создание водяного знака в текстовом поле.
@@ -39,6 +37,8 @@ namespace CSVtoSQL
                 tb.Foreground = brushWm;
                 tb.Text = wm;
             }
+
+
         }
 
         /// <summary>
@@ -49,6 +49,10 @@ namespace CSVtoSQL
         public void AddWaterMark(TextBox tb, string es, Brush brushWm, object obj = null)
         {
             emptyLinesOfTextBoxs.Add(tb, new WaterMarkElement(tb, es, obj, brushWm));
+
+            tb.GotKeyboardFocus += new KeyboardFocusChangedEventHandler(TbWm_GotKeyboardFocus);
+
+            tb.LostKeyboardFocus += new KeyboardFocusChangedEventHandler(TbWm_LostKeyboardFocus);
         }
 
         public bool IsContains(TextBox tb) => emptyLinesOfTextBoxs.ContainsKey(tb);
@@ -68,7 +72,7 @@ namespace CSVtoSQL
         public void SetWmBrush(TextBox tb, Brush brushWm) => emptyLinesOfTextBoxs[tb].brushWm = brushWm;
 
         public object GetObject(TextBox tb) => emptyLinesOfTextBoxs[tb].obj;
-        
+
         public void SetObject(TextBox tb, object obj) => emptyLinesOfTextBoxs[tb].obj = obj;
 
         public bool WaterMarkTextBoxIsEmpty(TextBox tb) => (emptyLinesOfTextBoxs[tb].waterMark == tb.Text);

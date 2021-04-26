@@ -1,16 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
-using System.Text;
+using System.Threading.Tasks;
 
-namespace CSVtoSQL
+namespace CSVtoDataBase
 {
     class StorageDataBase
     {
-        private SqlConnection sqlConnection;
-
-        private DataSet dataSet;
+        private readonly DataSet dataSet;
 
         private string connectionString;
         /// <summary>
@@ -18,25 +15,15 @@ namespace CSVtoSQL
         /// </summary>
         public string ConnectionString { get => connectionString; set => connectionString = value; }
 
-        public string ClientsString;
+        public string CustomersQueryString;
 
         public StorageDataBase(string connectionString)
         {
             ConnectionString = connectionString;
 
-            sqlConnection = new SqlConnection(ConnectionString);
-
-            ClientsString = "SELECT Id, NameCompany, UNP FROM Clients";
+            CustomersQueryString = "SELECT Id, NameCompany, UNP FROM Customers";
 
             dataSet = new DataSet();
-
-            SqlDataAdapter dataAdapter = new SqlDataAdapter(ClientsString, sqlConnection);
-
-            DataTable dt = new DataTable("Clients");
-
-            dataAdapter.Fill(dt);
-
-            dataSet.Tables.Add(dt);
         }
 
         public void Add(DataTable dt) => dataSet.Tables.Add(dt);
@@ -54,5 +41,72 @@ namespace CSVtoSQL
             }
         }
 
+        /// <summary>
+        /// Обновляет базу данных из соответствующей таблицы данных.
+        /// </summary>
+        /// <param name="nameTable">Имя таблицы данных.</param>
+        public async void UpdateDataBaseAsync(string nameTable)
+        {
+            using SqlConnection sqlConnection = new SqlConnection(ConnectionString);
+
+            SqlDataAdapter dataAdapter = new SqlDataAdapter(CustomersQueryString, sqlConnection);
+
+            SqlCommandBuilder commandBuilder = new SqlCommandBuilder(dataAdapter);
+
+            string s = commandBuilder.GetInsertCommand().CommandText;
+
+            await Task.Run(() => dataAdapter.Update(dataSet.Tables[nameTable]));
+        }
+
+        /// <summary>
+        /// Ассинхронно загружает указанную таблицу из базы данных.
+        /// </summary>
+        /// <param name="nameTable">Имя таблицы.</param>
+        /// <param name="queryString">Строка sql запроса данных таблицы. 
+        /// Если null - будет загружена вся таблица.
+        /// </param>
+        public void LoadDataTableAsync(string nameTable, string queryString = null)
+        {
+            PrepareForLoadDataTable(nameTable, queryString,
+                        async (dataAdapter, nameTable) =>
+                                { await Task.Run(() => dataAdapter.Fill(dataSet.Tables[nameTable])); });
+        }
+
+        /// <summary>
+        /// Загружает указанную таблицу из базы данных.
+        /// </summary>
+        /// <param name="nameTable">Имя таблицы.</param>
+        /// <param name="queryString">Строка sql запроса данных таблицы. 
+        /// Если null - будет загружена вся таблица.
+        /// </param>
+        public void LoadDataTable(string nameTable, string queryString = null)
+        {
+            PrepareForLoadDataTable(nameTable, queryString,
+                        (dataAdapter, nameTable) => dataAdapter.Fill(dataSet.Tables[nameTable]));
+        }
+
+        private void PrepareForLoadDataTable(string nameTable, string queryString, Action<SqlDataAdapter, string> load)
+        {
+            string newQueryString = queryString;
+
+            if (newQueryString == null)
+            {
+                newQueryString = $"SELECT * FROM {nameTable}";
+            }
+            SqlConnection sqlConnection = new SqlConnection(ConnectionString);
+
+            SqlDataAdapter dataAdapter = new SqlDataAdapter(newQueryString, sqlConnection);
+
+            if (dataSet.Tables.Contains(nameTable) == true)
+            {
+                dataSet.Tables[nameTable].Clear();
+            }
+            else
+            {
+                dataSet.Tables.Add(nameTable);
+            }
+
+            load(dataAdapter, nameTable);
+        }
     }
 }

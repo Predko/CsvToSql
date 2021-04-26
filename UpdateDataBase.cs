@@ -1,20 +1,8 @@
-﻿using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Data;
-using System.IO;
-using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using log4net;
-using System.Globalization;
-using System.Data.Odbc;
-using System.Linq;
-using System.Windows.Documents;
-using System.Threading;
 
-namespace CSVtoSQL
+namespace CSVtoDataBase
 {
     public partial class MainWindow : Window
     {
@@ -34,8 +22,11 @@ namespace CSVtoSQL
                 return;
             }
 
-            ConvertDataFromCSVToReportDataTable(FileNamesCSV.ToArray());
-            
+            if (ConvertDataFromCSVToReportDataTable(FileNamesCSV.ToArray()) == false)
+            {
+                return;
+            }
+
             UpdateDataBase();
         }
 
@@ -48,7 +39,7 @@ namespace CSVtoSQL
                  "Number" INTEGER,
                  "Comment" VARCHAR(10))
 
-                 TABLE "Clients"(
+                 TABLE "Customers"(
                  "Id" INTEGER NOT NULL IDENTITY PRIMARY KEY,
                  "NameCompany" VARCHAR(100),
                  "Account" VARCHAR(28), "city" VARCHAR(50),
@@ -62,7 +53,7 @@ namespace CSVtoSQL
 
                  TABLE "Contracts"(
                  "Id" INTEGER NOT NULL IDENTITY PRIMARY KEY,
-                 "ClientId" INTEGER,
+                 "CustomerId" INTEGER,
                  "Date" DATE,
                  "Number" INTEGER,
                  "Summ" DECIMAL(15, 2),
@@ -73,19 +64,19 @@ namespace CSVtoSQL
 
                  TABLE "Income"(
                  "Id" INTEGER NOT NULL IDENTITY PRIMARY KEY,
-                 "ClientId" INTEGER,
+                 "CustomerId" INTEGER,
                  "Summ" DECIMAL(15, 2),
                  "Date" DATE,
                  "Number" INTEGER,
                  "TypePaiment" BOOLEAN,
 
-                 INSERT INTO "Clients"("Id","NameCompany","Account","City","Account1","Region","PhoneNumber","Fax","Mail","File","UNP")
+                 INSERT INTO "Customers"("Id","NameCompany","Account","City","Account1","Region","PhoneNumber","Fax","Mail","File","UNP")
                  INSERT INTO "Expenses"("Id","Date","Summ","Number","Comment")
-                 INSERT INTO "Contracts"("Id","ClientId","Date","Number","Summ","Prepayment","Available","File","Comment")
-                 INSERT INTO "Income"("Id","ClientId","Summ","Date","Number","TypePaiment")
+                 INSERT INTO "Contracts"("Id","CustomerId","Date","Number","Summ","Prepayment","Available","File","Comment")
+                 INSERT INTO "Income"("Id","CustomerId","Summ","Date","Number","TypePaiment")
 
                  Колонки таблицы Report:
-                 (Id ClientId BankCode CorrAccount Number Debit Credit Equivalent Date Purpose NameCompany UNP)*/
+                 (Id CustomerId BankCode CorrAccount Number Debit Credit Equivalent Date Purpose NameCompany UNP)*/
         #endregion
 
         /// <summary>
@@ -95,17 +86,14 @@ namespace CSVtoSQL
         {
             static bool DataTableIsEmpty(DataTable dt) => dt.Rows.Count == 0;
 
-            #region Проверка, указаны ли имена файлов и готова ли таблица данных для формирования sql скрипта
+            #region Проверка, указаны ли имена файлов и готова ли таблица данных для обновления базы данных.
 
             DataTable report = storage["report"];
 
             if (DataTableIsEmpty(report))
             {
-                MessageBox.Show("Введите имя файла XML для чтения выписки.");
-
                 return;
             }
-            #endregion
 
             DataTable reportChanges = storage["report"].GetChanges();
 
@@ -116,275 +104,148 @@ namespace CSVtoSQL
 
                 return;
             }
+            #endregion
 
-            #region Сортировка по дате
-            List<DataRow> rows = new List<DataRow>();
+            #region Сортировка таблицы по дате.
+            DataView dv = reportChanges.DefaultView;
 
-            foreach (DataRow dr in reportChanges.Rows)
+            dv.Sort = "Date";
+
+            reportChanges = dv.ToTable();
+            #endregion
+
+            #region Определяем начальную дату выписки для Debit и Credit.
+
+            DateTime beginDateDebit = DateTime.MinValue;
+            DateTime beginDateCredit = DateTime.MinValue;
+
+            storage.LoadDataTable(nameCreditTable, $"SELECT TOP 1 * FROM [{nameCreditTable}] ORDER BY [Date] DESC");
+
+            storage.LoadDataTable(nameDebitTable, $"SELECT TOP 1 * FROM [{nameDebitTable}] ORDER BY [Date] DESC");
+
+            if (storage[nameCreditTable].Rows.Count != 0)
             {
-                rows.Add(dr);
+                beginDateCredit = (DateTime)storage[nameCreditTable].Rows[0]["Date"];
             }
 
-            rows.Sort((dr1, dr2) => ((DateTime)dr1["Date"]).CompareTo((DateTime)dr2["Date"]));
+            if (storage[nameDebitTable].Rows.Count != 0)
+            {
+                beginDateDebit = (DateTime)storage[nameDebitTable].Rows[0]["Date"];
+            }
+
+            #endregion
+
+            #region Загружаем данные из таблиц начиная с соответствующих начальных дат.
+
+            storage.LoadDataTable(nameCreditTable, $"SELECT TOP 1 * FROM [{nameCreditTable}] WHERE [Date] >= '{beginDateCredit}' ORDER BY [Date] DESC");
+
+            storage.LoadDataTable(nameDebitTable, $"SELECT TOP 1 * FROM [{nameDebitTable}] WHERE [Date] >= '{beginDateDebit}' ORDER BY [Date] DESC");
+
             #endregion
 
             try
             {
-                using StreamWriter streamWriter = new StreamWriter("1.sql"); //"TbSqlScriptFile.Text);
+                storage.UpdateDataBaseAsync("Customers");
 
-                string sqlHeader = $"USE \"{TbNameDataBase.Text}\"\n\n" +
-                                   "GO\n\n";
+                #region Запись данных выписки в таблицы с проверкой на повтор.
 
-                #region Строка создания таблицы выписок
-                string sqlCreateTable = "IF OBJECT_ID('Report','U') IS NOT NULL\n" +
-                                    "BEGIN\n" +
-                                       "\tDROP TABLE \"Report\"\n" +
-                                    "END\n\n" +
-                                     "CREATE TABLE \"Report\"\n(\n" +
-                                     "\"Id\" INTEGER NOT NULL IDENTITY PRIMARY KEY,\n" +
-                                    "\"ClientId\" INTEGER,\n" +
-                                    "\"BankCode\" VARCHAR(11),\n" +
-                                    "\"CorrAccount\" VARCHAR(28),\n" +
-                                    "\"Number\" VARCHAR(10),\n" +
-                                    "\"Debit\" DECIMAL(15, 2),\n" +
-                                    "\"Credit\" DECIMAL(15, 2),\n" +
-                                    "\"Equivalent\" DECIMAL(15, 2),\n" +
-                                    "\"date\" DATE,\n" +
-                                    "\"Purpose\" VARCHAR(500),\n" +
-                                    "\"NameCompany\" VARCHAR(100),\n" +
-                                    "\"UNP\" VARCHAR(9)\n);\n\nGO\n\n";
-                #endregion
-
-                #region Строка вставки данных выписок в таблицу
-                string sqlInsertStringHeader = "INSERT INTO \"Report\"(\"ClientId\",\"BankCode\",\"CorrAccount\",\"Number\",\"Debit\"," +
-                    "\"Credit\",\"Equivalent\",\"Date\",\"Purpose\",\"NameCompany\",\"UNP\")\n" +
-                                               "VALUES";
-                #endregion
-
-                #region Строка шаблона вставки записей
-                string sqlInsertString = "({0}," +
-                                         "'{1}','{2}','{3}'," +
-                                         "{4},{5},{6},'{7:yyyy'-'MM'-'dd}'," +
-                                         "'{8}'," +
-                                         "'{9}'," +
-                                         "'{10}')";
-                #endregion
-
-                #region Изменение формата записи сумм
-                NumberFormatInfo numberFormatInfo = CultureInfo.CurrentCulture.NumberFormat;
-
-                numberFormatInfo = (NumberFormatInfo)numberFormatInfo.Clone();
-
-                numberFormatInfo.NumberDecimalSeparator = ".";
-                #endregion
-
-                #region Запись заголовка скрипта - создание таблицы
-                streamWriter.WriteLine(sqlHeader);
-
-                Paragraph paragraph = new Paragraph();
-
-                FdMakeSqlScriptText.Blocks.Add(paragraph);
-
-                paragraph.Inlines.Add(new Run(sqlHeader));
-
-                streamWriter.WriteLine(sqlCreateTable);
-                paragraph.Inlines.Add(new Run(sqlCreateTable));
-
-                streamWriter.WriteLine(sqlInsertStringHeader);
-                paragraph.Inlines.Add(new Run(sqlInsertStringHeader));
-                #endregion
-
-                string preString = "";
-
-                bool isFirstString = true;
-
-                // Запись данных выписки в скрипт
-                foreach (DataRow dr in rows)
+                for (int i = 0; i != reportChanges.Rows.Count; i++)
                 {
-                    string sqlString = string.Format(numberFormatInfo, preString + sqlInsertString, dr[0],
-                                                                          dr[1], dr[2], dr[3],
-                                                                          dr[4], dr[5], dr[6], dr[7],
-                                                                          dr[8],
-                                                                          dr[9],
-                                                                          dr[10]);
+                    DataRow currentRow = reportChanges.Rows[i];
 
-                    streamWriter.Write(sqlString);
-
-                    paragraph.Inlines.Add(new Run(sqlString));
-
-                    if (isFirstString == true)
+                    if ((decimal)currentRow["Debit"] != 0)
                     {
-                        preString = ",\n";
+                        if ((DateTime)currentRow["Date"] < beginDateDebit)
+                        {
+                            continue;
+                        }
 
-                        isFirstString = false;
+                        // Проверяем, нет ли такой записи в базе данных.
+                        if (IsContainsOperation(nameDebitTable,
+                                                IgnoreId,
+                                                (int)currentRow["Number"],
+                                                (DateTime)currentRow["Date"]) == true)
+                        {
+                            continue;
+                        }
+
+                        DataRow newRow = storage[nameDebitTable].NewRow();
+
+                        // [Id], [Date],    [Summ],      [Number], [Comment]
+                        // int,   Date,   decimal(15.2),   int,     nvarchar[10]
+                        newRow.ItemArray = new object[] { null, currentRow["Date"], currentRow["Debit"], currentRow["Number"], null };
+
+                        storage[nameDebitTable].Rows.Add(newRow);
+                    }
+                    else
+                    if ((decimal)currentRow["Credit"] != 0)
+                    {
+                        if ((DateTime)currentRow["Date"] < beginDateCredit)
+                        {
+                            continue;
+                        }
+
+                        // Проверяем, нет ли такой записи в базе данных.
+                        if (IsContainsOperation(nameCreditTable,
+                                                (int)currentRow["CustomerId"],
+                                                (int)currentRow["Number"],
+                                                (DateTime)currentRow["Date"]) == true)
+                        {
+                            continue;
+                        }
+
+                        DataRow newRow = storage[nameCreditTable].NewRow();
+
+                        // [Id], [CustomerId],    [Summ],    [Date], [Number], [TypePayment]
+                        // int,    int,     decimal(15.2),  Date,    int,       bit
+                        newRow.ItemArray = new object[] { null, currentRow["CustomerId"], currentRow["Credit"], currentRow["Date"], currentRow["Number"], true };
+
+                        storage[nameCreditTable].Rows.Add(newRow);
                     }
                 }
-
-                #region Запись скрипта обновления базы данных
-                streamWriter.Write(";\n\nGO\n\n");
-                paragraph.Inlines.Add(new Run(";\n"));
-
-                UpdateDataBase(streamWriter,paragraph);
                 #endregion
 
-                MessageBox.Show("Скрипт успешно создан.");
+                MessageBox.Show("База данных обновлена.");
             }
             catch (Exception ex)
             {
-                MessageAndLogException("Не удалось преобразовать или записать файл SQL", ex);
+                MessageAndLogException("Не удалось обновить базу данных.", ex);
             }
         }
 
         /// <summary>
-        /// Скрипт обновления базы данных и записи в указанный параграф
+        /// Значение параметра idCustomer функции IsContainsOperation, при котором его следует игнорировать.
         /// </summary>
-        /// <param name="sw"></param>
-        /// <param name="paragraph"></param>
-        private void UpdateDataBase(StreamWriter sw, Paragraph paragraph)
-        {
-            UpdateClientsTable(sw, paragraph);
-
-            InsertIntoIncomeTable(sw, paragraph);
-
-            InsertIntoExpensesTable(sw, paragraph);
-        }
+        private const int IgnoreId = -1;
 
         /// <summary>
-        /// Скрипт обновления таблицы Clients и записи в указанный параграф
+        /// Проверяет наличие записи в таблице по Id клиента, номеру операции и дате операции.
         /// </summary>
-        /// <param name="sw"></param>
-        /// <param name="paragraph"></param>
-        private void UpdateClientsTable(StreamWriter sw, Paragraph paragraph)
+        /// <param name="nameTable">Имя таблицы.</param>
+        /// <param name="idCustomer">Id клиента. -1 - если не надо учитывать.</param>
+        /// <param name="numberOperation">Номер операции(платёжного поручения).</param>
+        /// <param name="dateOperation">Дата операции.</param>
+        /// <returns>True - если такая операция найдена иначе false</returns>
+        bool IsContainsOperation(string nameTable, int idCustomer, int numberOperation, DateTime dateOperation)
         {
-            string s = "UPDATE Clients\n" +
-                        "SET UNP = Report.UNP\n" +
-                        "FROM Report\n" +
-                        "WHERE Report.UNP IS NOT NULL AND Clients.Id= Report.ClientID\n\n" +
-                        "GO\n\n";
+            foreach (DataRow dr in storage[nameTable].Rows)
+            {
+                if (idCustomer != IgnoreId)
+                {
+                    if ((int)dr["CustomerId"] != idCustomer)
+                    {
+                        continue;
+                    }
+                }
 
-            sw.WriteLine(s);
-            paragraph.Inlines.Add(new Run(s));
+                // У одного клиента не может быть более одной операции с одним номером и датой.
+                if ((int)dr["Number"] == numberOperation && (DateTime)dr["Date"] == dateOperation)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
-
-        /// <summary>
-        /// Скрипт обновления таблицы Income и записи в указанный параграф
-        /// </summary>
-        /// <param name="sw"></param>
-        /// <param name="paragraph"></param>
-        private void InsertIntoIncomeTable(StreamWriter sw, Paragraph paragraph)
-        {
-            string s =
-@"IF OBJECT_ID('newTable', 'U') IS NOT NULL
- BEGIN
-    DROP TABLE newTable
-END
-
-IF OBJECT_ID('IncomeIds', 'U') IS NOT NULL
-BEGIN
-    DROP TABLE IncomeIds
-END
-
-DECLARE @LastDate DATE
-DECLARE @FirstDate DATE
-
-SELECT @LastDate = MAX(Income.[Date])
-FROM Income
-
-SELECT @FirstDate = MIN(Report.[date])
-FROM Report
-
-CREATE TABLE newTable(
-ReportId INT
-)
-
---
--- Insert into Income table
---
-IF @FirstDate <= @LastDate
-BEGIN
-    SELECT ClientId,Number,Summ
-    INTO IncomeIds
-    FROM Income
-    WHERE [Date] BETWEEN @FirstDate AND @LastDate
-
-    INSERT INTO newTable(ReportId)
-    SELECT Report.Id
-    FROM Report
-    WHERE(SELECT Id
-        FROM IncomeIds
-        WHERE Report.ClientId = ClientId
-            AND Report.Number = Number
-            AND Report.Credit = Summ) IS NOT NULL
-END
-
-INSERT INTO Income(ClientId, Summ, [Date], Number)
-SELECT ClientId, Credit,[date],Number
-FROM  Report
-WHERE Report.Credit != 0 AND
-    (SELECT ReportId
-    FROM newTable
-    WHERE Report.Id = ReportId) IS NULL
-
-";
-            
-            sw.WriteLine(s);
-            paragraph.Inlines.Add(new Run(s));
-        }
-
-        /// <summary>
-        /// Скрипт обновления таблицы Expenses и записи в указанный параграф
-        /// </summary>
-        /// <param name="sw"></param>
-        /// <param name="paragraph"></param>
-        private void InsertIntoExpensesTable(StreamWriter sw, Paragraph paragraph)
-        {
-            string s =
-@"--
--- Insert into Expenses table
---
-SELECT @LastDate = MAX(Expenses.[Date])
-FROM Expenses
-
-DELETE newTable
-
-IF @FirstDate <= @LastDate
-BEGIN
-    SELECT Number,Summ,[Date]
-    INTO ExpensesData
-    FROM Expenses
-    WHERE [Date] BETWEEN @FirstDate AND @LastDate
-
-    INSERT INTO newTable(ReportId)
-    SELECT Report.Id
-    FROM Report
-    WHERE(SELECT Id
-        FROM ExpensesData
-        WHERE Report.ClientId = ClientId
-            AND Report.Number = Number
-            AND Report.Credit = Summ
-			AND Report.[date] = [Date]) IS NOT NULL
-END
-
-INSERT INTO Expenses(Summ, [Date], Number)
-SELECT Debit,[date],Number
-FROM  Report
-WHERE  Report.Debit != 0 AND
-	(SELECT ReportId
-    FROM newTable
-    WHERE Report.Id = ReportId) IS NULL
-
-GO
-
-DROP TABLE newTable
-IF OBJECT_ID('IncomeIds', 'U') IS NOT NULL
-BEGIN
-    DROP TABLE IncomeIds
-END
-";
-
-            sw.WriteLine(s);
-            paragraph.Inlines.Add(new Run(s));
-        }
-
     }
 }

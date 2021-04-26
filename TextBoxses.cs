@@ -1,7 +1,5 @@
 ﻿using Microsoft.Win32;
-using System;
 using System.Collections.Generic;
-using System.Data;
 using System.IO;
 using System.Text;
 using System.Windows;
@@ -9,7 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace CSVtoSQL
+namespace CSVtoDataBase
 {
     public partial class MainWindow : Window
     {
@@ -21,33 +19,21 @@ namespace CSVtoSQL
         #region Строки водяных знаков для соответствующих текстовых полей.
         private const string emptyReportsFileName = "Введите имена файлов выписок...";
 
+        private const string emptyDataBaseName = "Введите имя базы данных...";
         #endregion
-
-        /// <summary>
-        /// Словарь, хранящий строки "водяных знаков" текстовых полей и признак множественного выбора файлов.
-        /// </summary>
-        private Dictionary<TextBox, string> emptyLinesOfTextBoxs = new Dictionary<TextBox, string>();
-
-        /// <summary>
-        /// XML файл для формируемой выписки
-        /// </summary>
-        public string XmlReportfileName { get; set; } = "";
 
         /// <summary>
         /// Список имён файлов выписок. Выбирается пользователем.
         /// </summary>
         private readonly List<string> FileNamesCSV = new List<string>();
 
-        /// <summary>
-        /// Имя файла SQL скрипта.
-        /// </summary>
-        private readonly StringBuilder SqlScriptFileName = new StringBuilder("");
-
         private void InitializeTextBoxWaterMark()
         {
             waterMark = new WaterMarkForTextBox();
 
             waterMark.AddWaterMark(tbFilesCSV, emptyReportsFileName, Brushes.Gray, FileNamesCSV);
+
+            waterMark.AddWaterMark(TbNameDataBase, emptyDataBaseName, Brushes.Gray, null);
         }
 
         #region События для обработки водяного знака
@@ -97,11 +83,11 @@ namespace CSVtoSQL
                         sb.Append(files[0]);
                     }
                 }
-                
+
                 tb.Text = "";
 
                 int i;
-                
+
                 for (i = 0; i != files.Length - 1; i++)
                 {
                     tb.Text += files[i] + "\n";
@@ -109,46 +95,6 @@ namespace CSVtoSQL
 
                 tb.Text += files[i];
             }
-        }
-
-        /// <summary>
-        /// Обрабатывает выбор sql файла из каталога или создание нового.
-        /// Расширение, если его нет, добавляется автоматически.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void TbSqlScriptFile_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            if (sender is TextBox tb)
-            {
-                tb.Text = GetFileNameToSave("SQL|*.sql|All files *.*|*.*", ".sql") ?? "";
-            }
-        }
-
-        /// <summary>
-        /// Создаёт диалоговое окно выбора файла и возвращает имя выбранного файла.
-        /// </summary>
-        /// <returns>Имя файла или null</returns>
-        private string GetFileNameToSave(string filter, string ext)
-        {
-            SaveFileDialog saveFileDialog = new SaveFileDialog
-            {
-                Filter = filter
-            };
-
-            if (saveFileDialog.ShowDialog() == true)
-            {
-                string fileName = saveFileDialog.FileName.Trim();
-
-                if (fileName.EndsWith(ext, StringComparison.OrdinalIgnoreCase) == false)
-                {
-                    fileName += ext;
-                }
-
-                return fileName;
-            }
-
-            return null;
         }
 
         /// <summary>
@@ -172,42 +118,5 @@ namespace CSVtoSQL
 
             return null;
         }
-
-        /// <summary>
-        /// Создаёт диалоговое окно выбора/создания файла.
-        /// Путь и имя файла записывает в контент вызвавшего TextBox/
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        public void TbWmXMLfileName_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            SaveFileDialog saveFileDialog = new SaveFileDialog
-            {
-                Filter = "XML|*.xml|All files *.*|*.*",
-                InitialDirectory = Directory.GetCurrentDirectory()
-            };
-
-            if (saveFileDialog.ShowDialog() == false)
-            {
-                return;
-            }
-            
-            string file = saveFileDialog.FileName;
-
-            if (file.ToLower().Contains(".xml") == false)
-            {
-                file += ".xml";
-            }
-
-            XmlReportfileName = file;
-
-            if (sender is TextBox tb)
-            {
-                FilePath = file.Substring(0, file.LastIndexOf('\\') + 1);
-
-                tb.Text = file;
-            }
-        }
-
     }
 }

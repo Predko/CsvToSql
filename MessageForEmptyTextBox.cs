@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
 
-namespace CSVtoSQL
+namespace CSVtoDataBase
 {
     public class MessageForEmptyTextBox
     {
@@ -66,7 +64,7 @@ namespace CSVtoSQL
         }
 
         /// <summary>
-        /// Каждый тик таймера циклически меняет прозрачность фона tbFileCSV
+        /// Каждый тик таймера циклически меняет цвет фона textBox
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>

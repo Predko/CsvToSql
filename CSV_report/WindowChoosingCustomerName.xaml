@@ -1,9 +1,9 @@
-﻿<Window x:Class="CSVtoSQL.CSV_report.WindowChoosingClientName"
+﻿<Window x:Class="CSVtoDataBase.CSV_report.WindowChoosingCustomerName"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:CSVtoSQL.CSV_report"
+        xmlns:local="clr-namespace:CSVtoDataBase.CSV_report"
         mc:Ignorable="d"
         FontFamily="Consolas"
         Title="Выбор клиента" Height="450" Width="500"
@@ -19,16 +19,20 @@
         </Grid.RowDefinitions>
         <TextBox x:Name="DescriptionOfPurpose" Grid.Row="0" Margin="5"
                  MinHeight="110"
+                 Width="{Binding ElementName=listBoxCustomers, Path=ActualWidth, Mode=OneWay}"
                  TextWrapping="Wrap"/>
-        <ListBox x:Name="listBoxClients" Grid.Row="1" 
+        <ListBox x:Name="listBoxCustomers" Grid.Row="1" 
                  Margin="5"
-                 MouseDoubleClick="ListBoxClients_MouseDoubleClick">
-<!--            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <TextBlock Text ="{Binding:}" ToolTip="Двойной клик для выбора пункта"/>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
--->
+                 MouseDoubleClick="ListBoxCustomers_MouseDoubleClick">
+                <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <DockPanel LastChildFill="True">
+                                <TextBlock DockPanel.Dock="Left" Text ="{Binding StringFormat='{}{0,5:n0}', Path=Id}" Margin="5 0 5 0" ToolTip="Двойной клик для выбора пункта"/>
+                                <TextBlock DockPanel.Dock="Left" Text ="{Binding StringFormat='{}{0,12}', Path=UNP}" Margin="5 0 5 0" ToolTip="Двойной клик для выбора пункта"/>
+                                <TextBlock Text ="{Binding Path=Name}" Margin="5 0 5 0" ToolTip="Двойной клик для выбора пункта"/>
+                            </DockPanel>
+                        </DataTemplate>
+                </ListBox.ItemTemplate>
         </ListBox>
         <StackPanel Grid.Row="2" Orientation="Horizontal" FlowDirection="RightToLeft">
             <Button IsCancel="True" MinWidth="80" Margin="10" HorizontalAlignment="Right">Cancel</Button>

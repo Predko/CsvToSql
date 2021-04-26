@@ -1,18 +1,11 @@
-﻿using Microsoft.Win32;
+﻿using CSVtoDataBase.CSV_report;
 using System;
-using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using CSVtoSQL.CSV_report;
-using System.Windows.Media;
-using System.Windows.Threading;
-using System.Threading.Tasks;
 
-namespace CSVtoSQL
+namespace CSVtoDataBase
 {
     public partial class MainWindow : Window
     {
@@ -36,18 +29,20 @@ namespace CSVtoSQL
         /// <returns>True - если чтение выписок успешно, иначе - false.</returns>
         private bool ConvertDataFromCSVToReportDataTable(string[] filesIn)
         {
-            const int  BankCode = 0;    // Код банка
-            const int  Account = 1;     // Счет-корреспондент
-            const int  Number = 2;      // Номер документа
-            const int  Debit = 3;       // Обороты: дебет
-            const int  Credit = 4;      // Обороты: кредит
-            const int  Equivalent = 5;  // В эквиваленте
-            const int  Date = 6;        // Дата операции
-            const int  Purpose = 7;     // Назначение
-            const int  Name = 8;        // Наименование контрагента
-            const int  UNP = 9;         // УНП контрагента
+            const int BankCode = 0;    // Код банка
+            const int Account = 1;     // Счет-корреспондент
+            const int Number = 2;      // Номер документа
+            const int Debit = 3;       // Обороты: дебет
+            const int Credit = 4;      // Обороты: кредит
+            const int Equivalent = 5;  // В эквиваленте
+            const int Date = 6;        // Дата операции
+            const int Purpose = 7;     // Назначение
+            const int Name = 8;        // Наименование контрагента
+            const int UNP = 9;         // УНП контрагента
 
             DataTable dtReports = storage["report"];
+
+            storage.LoadDataTable("Customers");
 
             dtReports.Clear();
 
@@ -97,39 +92,42 @@ namespace CSVtoSQL
                         decimal d2 = string.IsNullOrEmpty(s[Credit]) ? 0 : decimal.Parse(s[Credit]);
                         decimal d3 = string.IsNullOrEmpty(s[Equivalent]) ? 0 : decimal.Parse(s[Equivalent]);
 
-                        int idClient = 0;
+                        int idCustomer = 0;
 
-                        if (listClients.Count!= 0)
+                        if (listCustomers.Count != 0)
                         {
-                            Client client = listClients.Find(s[Name], s[UNP]);
+                            Customer customer = listCustomers.Find(s[Name], s[UNP]);
 
-                            if (client == ListClients.NotFound)
+                            if (customer == ListCustomers.NotFound)
                             {
                                 // Клиент не найден, предлагаем пользователю выбрать клиента из списка.
-                                WindowChoosingClientName choosingClientName = new WindowChoosingClientName(listClients);
+                                WindowChoosingCustomerName choosingCustomerName = new WindowChoosingCustomerName(listCustomers);
 
-                                choosingClientName.DescriptionOfPurpose.Text = $"УНП: {s[UNP]}, Номер ПП: {s[Number].Trim('\"', '=')} " +
+                                choosingCustomerName.DescriptionOfPurpose.Text = $"УНП: {s[UNP]}, Номер ПП: {s[Number].Trim('\"', '=')} " +
                                                 $"Дата: {s[Date]} Сумма: {s[Equivalent]}\n" + s[Purpose];
 
-                                if (choosingClientName.ShowDialog() == false)
+                                if (choosingCustomerName.ShowDialog() == false || choosingCustomerName.SelectedCustomer == null)
                                 {
-                                    MessageBox.Show("Операция конвертации отменена");
+                                    MessageBox.Show("Операция чтения выписки отменена.");
 
                                     return false;
                                 }
 
-                                client = choosingClientName.SelectedClient;
+                                customer = choosingCustomerName.SelectedCustomer;
 
-                                client.UNP = s[UNP];
+                                if (customer.UNP.Length == 0)
+                                {
+                                    customer.UNP = s[UNP];
+                                }
                             }
 
-                            idClient = client.Id;
+                            idCustomer = customer.Id;
                         }
 
                         ///    0 Код банка; 1 Счет-корреспондент; 2 Номер документа;
                         ///    3 Обороты: дебет; 4 Обороты: кредит; 5 В эквиваленте; 6 Дата операции;
                         ///    7 Назначение; 8 Наименование контрагента; 9 УНП контрагента;
-                        dr.ItemArray = new object[] { idClient, s[BankCode], s[Account].Trim('\"', '='), s[Number].Trim('\"', '='),
+                        dr.ItemArray = new object[] { idCustomer, s[BankCode], s[Account].Trim('\"', '='), int.Parse(s[Number].Trim('\"', '=')),
                                                   d1, d2, d3, DateTime.Parse(s[Date]).Date,
                                                   s[Purpose], s[Name], s[UNP]
                                                 };
@@ -161,7 +159,7 @@ namespace CSVtoSQL
 
             PbProgress.Value = i;
 
-            return false;
+            return true;
         }
 
         /// <summary>

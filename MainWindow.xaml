@@ -1,9 +1,9 @@
-﻿<Window x:Class="CSVtoSQL.MainWindow"
+﻿<Window x:Class="CSVtoDataBase.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:CSVtoSQL"
+        xmlns:local="clr-namespace:CSVtoDataBase"
         mc:Ignorable="d"
         FontFamily="Consolas"
         Title="Преобразование CSV файлов интернет банкинга БелАпб" Height="450" Width="900">
@@ -26,7 +26,7 @@
                      Margin="10 5 10 5"
                      ScrollViewer.VerticalScrollBarVisibility="Auto"
                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                     GotKeyboardFocus="TbWm_GotKeyboardFocus" LostKeyboardFocus="TbWm_LostKeyboardFocus" MouseDoubleClick="TbWm_MouseDoubleClick" 
+                     MouseDoubleClick="TbWm_MouseDoubleClick" 
                      ToolTip="Двойной клик - для выбора файла на диске"/>
         </DockPanel>
 
@@ -36,8 +36,8 @@
                     <TextBlock Text="Название базы данных:" Margin="10 10 10 5" DockPanel.Dock="Left"/>
                     <TextBox x:Name="TbNameDataBase"
                     HorizontalContentAlignment="Stretch"
-                    VerticalAlignment="Center"
-                    Margin="10 5 10 5"/>
+                    VerticalAlignment="Center" Margin="10 5 10 5"/>
+                    <!-- GotKeyboardFocus="TbWm_GotKeyboardFocus" LostKeyboardFocus="TbWm_LostKeyboardFocus"-->
                 </DockPanel>
                 <Button x:Name="BtnUpdateDataBase" Content="Обновить базу данных." 
                     Margin="10 5 10 5"

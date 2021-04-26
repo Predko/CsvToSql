@@ -1,13 +1,7 @@
 ﻿using log4net;
-using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 
-namespace CSVtoSQL
+namespace CSVtoDataBase
 {
     /// <summary>
     /// Interaction logic for App.xaml
@@ -15,7 +9,7 @@ namespace CSVtoSQL
     public partial class App : Application
     {
         public static string[] Args;
-        
+
         public static readonly ILog Log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         protected override void OnStartup(StartupEventArgs e)
@@ -24,7 +18,7 @@ namespace CSVtoSQL
             Log.Info("Start programm");
             base.OnStartup(e);
         }
-        
+
         private void Application_Startup(object sender, StartupEventArgs e)
         {
             Args = e.Args;

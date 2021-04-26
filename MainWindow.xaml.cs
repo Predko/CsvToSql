@@ -1,27 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+﻿using log4net;
+using System;
 using System.Configuration;
-using log4net;
+using System.Data;
+using System.IO;
+using System.Windows;
 
-using Microsoft.Win32;
-using System.Data.SqlClient;
-
-namespace CSVtoSQL
+namespace CSVtoDataBase
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -32,9 +16,9 @@ namespace CSVtoSQL
     /// Для этого подготавливается текстовый файл с данными клиентов в формате:
     /// Id\tUNP\tNameCompany
     /// Колонким разделены одинарной табуляцией.
-    /// Данные о клиентах хранятся в отдельной таблице Clients
-    /// Перед чтением файлов выписок, таблица Clients должна быть заполнена.
-    /// Для упрощения доступа к данным клиентов, используется класс ListClients
+    /// Данные о клиентах хранятся в отдельной таблице Customers
+    /// Перед чтением файлов выписок, таблица Customers должна быть заполнена.
+    /// Для упрощения доступа к данным клиентов, используется класс ListCustomers
     /// Данные выписки хранятся в таблице Report.
     /// Последовательность работы:
     /// - Создание файла xml с данными клиентов из текстового файла в формате: Id \t УНП(или пробелы) \t Название.
@@ -49,24 +33,24 @@ namespace CSVtoSQL
     /// </summary>
     public partial class MainWindow : Window
     {
-        private readonly ListClients listClients;
+        /// <summary>
+        /// УНП бюджетных организаций.
+        /// </summary>
+        private const string UnpBudget = "500563252";
+
+        private ListCustomers listCustomers;
 
         private StorageDataBase storage;
 
         /// <summary>
-        /// УНП бюджетных организаций.
+        /// Имя таблицы выплат.
         /// </summary>
-        private string UnpBudget = "500563252";
+        private readonly string nameDebitTable = "Expenses";
 
         /// <summary>
-        /// Путь к рабочему каталогу.
+        /// Имя таблицы поступлений.
         /// </summary>
-        string FilePath;
-
-        /// <summary>
-        /// Имя файла с данными клиентов.
-        /// </summary>
-        string ClientsFileName;
+        private readonly string nameCreditTable = "Income";
 
         private static readonly ILog log = LogManager.GetLogger(typeof(MainWindow));
 
@@ -76,29 +60,21 @@ namespace CSVtoSQL
 
             InitializeTextBoxWaterMark();
 
-            InitSqlConnection();
+            InitProgramFromArguments();
 
-            ClientsFileName = InitFileName();
+            InitStorage();
 
             InitDataTables();
 
-            listClients = new ListClients(storage["Clients"], ClientsFileName)
-            {
-                UnpBudget = UnpBudget
-            };
-
-            if (listClients.Count == 0)
-            {
-                // Не удалось загрузить файл с данными о клиентах - делаем кнопку чтения выписок неактивной.
-                BtnUpdateDataBase.IsEnabled = false;
-            }
-
-            this.DataContext = this;
+            DataContext = this;
         }
 
-        private void InitSqlConnection()
+        /// <summary>
+        /// Инициализация хранилища данных.
+        /// </summary>
+        private void InitStorage()
         {
-            // Читаем строку подключения к базе данных clients из файла конфигурации
+            // Читаем строку подключения к базе данных Customers из файла конфигурации
             string connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
 
             storage = new StorageDataBase(connectionString);
@@ -106,60 +82,41 @@ namespace CSVtoSQL
         }
 
         /// <summary>
-        /// Читает аргументы из командной строки и инициализирует переменные FilePath
+        /// Читает аргументы из командной строки 
+        /// и инициализирует список файлов выписки,
+        /// если файлы указаны.
         /// </summary>
         /// <returns></returns>
-        private string InitFileName()
+        private void InitProgramFromArguments()
         {
-            string fname = null, filePath = null;
-
-            if (App.Args.Length != 0)
+            if (App.Args.Length == 0 || App.Args[0].Trim().Length == 0)
             {
-                fname = App.Args[0].Trim();
+                return;
+            }
 
-                if (fname.Length != 0)
+            string firstArgument = App.Args[0].Trim();
+
+            string s = firstArgument.ToLower().Trim('\\', '/', '-');
+
+            if (s[0] == '?' || s == "help" || s == "h")
+            {
+                MessageBox.Show("Использование:\nCSVtoSQL.exe [Имя файла выписки.csv] [Имя файла выписки.csv] [Имя файла выписки.csv]...\n" +
+                    "Где: [Имя файла выписки.csv] - имя файла банковской выписки.\n" +
+                    "Может быть указано несколько файлов.\n" +
+                    "Если имя файла содержит пробелы, его надо заключить в ковычки \"Имя файла с пробелами.csv\"\n" +
+                    "Если аргументы не указаны, файлы можно выбрать в программе.");
+
+                return;
+            }
+
+            // Заполняем список файлов выписки из аргументов коммандной строки.
+            foreach (string fileName in App.Args)
+            {
+                if (File.Exists(fileName) == true)
                 {
-                    string s = fname.ToLower().Trim('\\', '/', '-');
-
-                    if (s[0] == '?' || s == "help" || s == "h")
-                    {
-                        MessageBox.Show("Использование:\nCSVtoSQL.exe [fileClientsInfo]\n" +
-                            "Где: [fileClientsInfo.txt] - не обязательное имя файла содержащего записи с данными о клиентах\n" +
-                            "в формате:\n Id<Tab>УНП<Tab>Название организации[<Tab>1]- признак бюджетной организации.\n" +
-                            "Колонки разделены одинарными табуляциями.\n" +
-                            "Подключить файл с данными о клиентах можно в самой программе.");
-
-                        fname = null;
-                    }
-                    else
-                    {
-                        filePath = fname.Substring(0, fname.LastIndexOf('\\') + 1);
-
-
-                        if (File.Exists(fname) == false)
-                        {
-                            fname = null;
-                            
-                            if (Directory.Exists(filePath) == false)
-                            {
-                                filePath = null;
-                            }
-                        }
-                    }
+                    FileNamesCSV.Add(fileName);
                 }
             }
-
-            if (filePath == null)
-            {
-                FilePath = Directory.GetCurrentDirectory();
-            }
-
-            if (fname == null)
-            {
-                fname = $"{FilePath}\\CsvToXml_clients.xml";
-            }
-
-            return fname;
         }
 
         /// <summary>
@@ -167,47 +124,53 @@ namespace CSVtoSQL
         /// </summary>
         private void InitDataTables()
         {
-            DataTable dt = new DataTable("TmpClients");
+            DataTable dt = new DataTable("report");
 
+            dt.Columns.Add(new DataColumn("CustomerId", Type.GetType("System.Int32")));
+
+            dt.Columns.Add(new DataColumn("BankCode", Type.GetType("System.String")));
+
+            dt.Columns.Add(new DataColumn("CorrAccount", Type.GetType("System.String")));
+
+            dt.Columns.Add(new DataColumn("Number", Type.GetType("System.Int32")));
+
+            dt.Columns.Add(new DataColumn("Debit", Type.GetType("System.Decimal")));
+
+            dt.Columns.Add(new DataColumn("Credit", Type.GetType("System.Decimal")));
+
+            dt.Columns.Add(new DataColumn("Equivalent", Type.GetType("System.Decimal")));
+
+            dt.Columns.Add(new DataColumn("Date", Type.GetType("System.DateTime")));
+
+            dt.Columns.Add(new DataColumn("Purpose", Type.GetType("System.String")));
+
+            dt.Columns.Add(new DataColumn("NameCompany", Type.GetType("System.String")));
+
+            dt.Columns.Add(new DataColumn("UNP", Type.GetType("System.String")));
+
+            storage.Add(dt);
+
+            storage.LoadDataTable("Customers");
+
+            listCustomers = new ListCustomers(storage["Customers"])
             {
-                dt.Columns.Add(new DataColumn("Id", Type.GetType("System.Int32")) { Unique = true });
+                UnpBudget = MainWindow.UnpBudget
+            };
 
-                dt.Columns.Add(new DataColumn("NameCompany", Type.GetType("System.String")));
-
-                dt.Columns.Add(new DataColumn("UNP", Type.GetType("System.String")));
-
-                dt.PrimaryKey = new DataColumn[] { dt.Columns["Id"] };
-
-                storage.Add(dt);
+            if (listCustomers.Count == 0)
+            {
+                // Не удалось загрузить файл с данными о клиентах - делаем кнопку чтения выписок неактивной.
+                BtnUpdateDataBase.IsEnabled = false;
             }
 
-            dt = new DataTable("report");
+            // Мостовская ЦРБ.
+            const int CDH_id = 46;
+            Customer customer = listCustomers.GetCustomerAtId(CDH_id);
 
-            {
-                dt.Columns.Add(new DataColumn("ClientId", Type.GetType("System.Int32")));
-
-                dt.Columns.Add(new DataColumn("BankCode", Type.GetType("System.String")));
-
-                dt.Columns.Add(new DataColumn("CorrAccount", Type.GetType("System.String")));
-
-                dt.Columns.Add(new DataColumn("Number", Type.GetType("System.String")));
-
-                dt.Columns.Add(new DataColumn("Debit", Type.GetType("System.Decimal")));
-
-                dt.Columns.Add(new DataColumn("Credit", Type.GetType("System.Decimal")));
-
-                dt.Columns.Add(new DataColumn("Equivalent", Type.GetType("System.Decimal")));
-
-                dt.Columns.Add(new DataColumn("Date", Type.GetType("System.DateTime")));
-
-                dt.Columns.Add(new DataColumn("Purpose", Type.GetType("System.String")));
-
-                dt.Columns.Add(new DataColumn("NameCompany", Type.GetType("System.String")));
-
-                dt.Columns.Add(new DataColumn("UNP", Type.GetType("System.String")));
-
-                storage.Add(dt);
-            }
+            customer.AddKeyWord("мостовская");
+            customer.AddKeyWord("районная");
+            customer.AddKeyWord("больница");
+            customer.AddKeyWord("здравоохранени");
         }
     }
 }

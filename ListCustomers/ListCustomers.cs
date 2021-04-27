@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 
 namespace CSVtoDataBase
 {
@@ -20,7 +21,7 @@ namespace CSVtoDataBase
 
         private readonly DataRow customerRow;
 
-        private List<string> keyWords = new List<string>();
+        public List<string> keyWords;
 
         public Customer(DataRow dr) => customerRow = dr;
 
@@ -72,13 +73,13 @@ namespace CSVtoDataBase
 
             foreach (string kw in keyWords)
             {
-                if (name.Contains(kw) == false)
+                if (name.Contains(kw) == true)
                 {
-                    return false;
+                    return true;
                 }
             }
 
-            return true;
+            return false;
         }
 
         /// <summary>
@@ -267,15 +268,126 @@ namespace CSVtoDataBase
         private readonly DataTable customers;
 
         /// <summary>
-        /// УНП бюджетных организаций.
+        /// Словарь списков ключевых слов для идентификации клиентов.
+        /// Ключом является Id клиента.
         /// </summary>
-        public string UnpBudget;
+        private readonly Dictionary<int, List<string>> keywords = new Dictionary<int, List<string>>();
 
+        /// <summary>
+        /// Список неуникальных слов в названиях клиентов.
+        /// </summary>
+        private readonly List<string> nonUniqueWords = new List<string>();
+
+
+        /// <summary>
+        /// Создаёт новый список клиентов для данной таблицы.
+        /// </summary>
+        /// <param name="dtCustomers">Таблица данных клиента.</param>
         public ListCustomers(DataTable dtCustomers)
         {
             customers = dtCustomers;
+
+            InitKeywords();
+        }
+        
+        // !!!!!!!!!!!!!!!!
+        // Можно попробовать использовать двоичное дерево для идентификации клиента.
+        // Для этого надо для каждого клиента составить список слов.
+        // Отсортировать этот список у каждого клиента по количеству употребления этих слов у всех клиентов.
+        // Создать двоичное дерево из ключевых слов клиентов, начиная с найболее часто употребимых.
+
+        /// <summary>
+        /// Генерирует список уникальных ключевых слов для каждого клиента.
+        /// Все списки помещаются в словарь с ключом равным Id клиента.
+        /// </summary>
+        private void InitKeywords()
+        {
+            keywords.Clear();
+
+            nonUniqueWords.Clear();
+
+            foreach (Customer current in this)
+            {
+                string[] words = current.Name.Split(new char[] { ' ', '\"' }, StringSplitOptions.RemoveEmptyEntries);
+
+                // Проверяем наличие всех ключевых слов в словаре.
+                // Если такого слова нет добавляем его в список слов с Id данного клиента.
+                // Если такое слово есть, значит оно не уникально и удаляем его из словаря.
+                foreach (string word in words)
+                {
+                    // Считаем, что слово уникально.
+                    bool uniqueWord = true;
+
+                    // Проверяем наличие данного слова у всех клиентов.
+                    foreach (List<string> customerListKeywords in keywords.Values)
+                    {
+                        // Проверяем наличие данного слова в списке слов данного клиента.
+                        if (customerListKeywords.Contains(word) == true)
+                        {
+                            if (customerListKeywords.Count > 1)
+                            {
+                                // Такое слово есть, оно не уникально и оно не единственное слово
+                                // поэтому удаляем его.
+                                customerListKeywords.Remove(word);
+
+                                nonUniqueWords.Add(word);
+                            }
+
+                            // Слово не уникально.
+                            uniqueWord = false;
+
+                            break;
+                        }
+                    }
+
+                    // Проверяем не было ли это слово помещено в список неуникальных.
+                    if (nonUniqueWords.Contains(word) == true)
+                    {
+                        // Слово не уникально.
+                        uniqueWord = false;
+                    }
+
+                    // Если слово уникально - добавляем его в словарь данного клиента.
+                    if (uniqueWord == true)
+                    {
+                        current.keyWords.Add(word);
+                    }
+                }
+            }
+
+            using StreamWriter sw = new StreamWriter("keywords.txt");
+
+            foreach (var customer in this)
+            {
+                sw.WriteLine(customer);
+
+                int count = customer.keyWords.Count;
+
+                for (int i = 0; i != count; i++)
+                {
+                    sw.Write(customer.keyWords[i]);
+
+                    if (i == count - 1)
+                    {
+                        sw.Write("\n\n");
+                    }
+                    else
+                    {
+                        sw.Write(",");
+                    }
+                }
+            }
+
+            foreach (var s in nonUniqueWords)
+            {
+                sw.Write(s + ",");
+            }
+
         }
 
+        /// <summary>
+        /// Указывает, что клиент отсутствует.
+        /// </summary>
         public const Customer NotFound = null;
 
         /// <summary>
@@ -285,75 +397,6 @@ namespace CSVtoDataBase
         public int Count => customers.Rows.Count;
 
         /// <summary>
-        /// Заполняет список информацией о клиентах из DataTable с удалением имеющейся информации
-        /// </summary>
-        /// <param name="dt"></param>
-        public void Set(DataTable dt)
-        {
-            Clear();
-
-            Add(dt);
-
-            customers.AcceptChanges();
-        }
-
-        /// <summary>
-        /// Добавляет в список таблицу с данными о клиентах.
-        /// </summary>
-        /// <param name="dt">Данные о клиентах.</param>
-        public void Add(DataTable dt)
-        {
-            foreach (DataRow row in dt.Rows)
-            {
-                Add(row);
-            }
-        }
-
-        /// <summary>
-        /// Добавляет в список данные об одном клиенте.
-        /// </summary>
-        /// <param name="row">Информация о клиенте.</param>
-        public void Add(DataRow row) => Add(Customer.GetId(row), Customer.GetName(row), Customer.GetUNP(row));
-
-        /// <summary>
-        /// Добавляет в список данные об одном клиенте.
-        /// </summary>
-        /// <param name="customer">Объект типа Customer</param>
-        public void Add(Customer customer) => Add(customer.Id, customer.Name, customer.UNP);
-
-        /// <summary>
-        /// Добавляет наименование клиента с данным id.
-        /// </summary>
-        /// <param name="id">Id клиента</param>
-        /// <param name="name">Наименование</param>
-        /// <param name="unp">УНП</param>
-        public void Add(object id, object name, object unp)
-        {
-            DataRow res = customers.Rows.Find(id);
-
-            // Если такой записи нет, добавляем.
-            if (res == null)
-            {
-                DataRow row = customers.NewRow();
-
-                row.ItemArray = new object[] { id, name, unp };
-
-                customers.Rows.Add(row);
-
-                return;
-            }
-
-            // Такая запись есть, переписываем её значения.
-            Customer.SetName(res, (string)name);
-            Customer.SetUNP(res, (string)unp);
-        }
-
-        /// <summary>
-        /// Полностью очищает список клиентов.
-        /// </summary>
-        private void Clear() => customers.Clear();
-
-        /// <summary>
         /// Поиск клиента по УНП и названию.
         /// </summary>
         /// <param name="nameCustomer">Название клиента.</param>
@@ -361,16 +404,8 @@ namespace CSVtoDataBase
         /// <returns>Экземпляр класса Customer для данного клиента, если поиск успешен, иначе ListCustomers.NotFound = null</returns>
         public Customer Find(string nameCustomer, string unpCustomer)
         {
-            //if (unpCustomer == UnpBudget)
-            //{
-            //    // Этот УНП не может идентифицировать плательщика.
-            //    return NotFound;
-            //}
-
-            for (int i = 0; i != customers.Rows.Count; i++)
+            foreach(Customer customer in this)
             {
-                Customer customer = new Customer(customers.Rows[i]);
-
                 string unp = customer.UNP;
 
                 if (unp.Length == 0)
@@ -394,28 +429,57 @@ namespace CSVtoDataBase
         }
 
         /// <summary>
+        /// Возвращает объект типа Customer.
+        /// </summary>
+        /// <param name="row"></param>
+        /// <returns></returns>
+        private Customer GetCustomers(DataRow row)
+        {
+            Customer customer = new Customer(row);
+
+            if (keywords.TryGetValue(customer.Id, out List<string> listKeywords) == false)
+            {
+                listKeywords = new List<string>();
+
+                keywords[customer.Id] = listKeywords;
+            }
+
+            customer.keyWords = listKeywords;
+
+            return customer;
+        }
+
+        public Customer this[DataRow row]
+        {
+            get
+            {
+                return GetCustomers(row);
+            }
+        }
+
+        /// <summary>
         /// Возвращает клиента по id.
         /// </summary>
         /// <param name="id">Id клиента.</param>
         /// <returns>Экземпляр клиента или null - если не найден.</returns>
         public Customer GetCustomerAtId(int id)
         {
-            foreach (DataRow dr in customers.Rows)
+            foreach (Customer current in this)
             {
-                if ((int)dr["Id"] == id)
+                if (current.Id == id)
                 {
-                    return new Customer(dr);
+                    return current;
                 }
             }
 
-            return null;
+            return NotFound;
         }
 
         public IEnumerator<Customer> GetEnumerator()
         {
             foreach (DataRow row in customers.Rows)
             {
-                yield return new Customer(row);
+                yield return this[row];
             }
         }
 

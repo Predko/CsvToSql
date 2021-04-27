@@ -152,10 +152,7 @@ namespace CSVtoDataBase
 
             storage.LoadDataTable("Customers");
 
-            listCustomers = new ListCustomers(storage["Customers"])
-            {
-                UnpBudget = MainWindow.UnpBudget
-            };
+            listCustomers = new ListCustomers(storage["Customers"]);
 
             if (listCustomers.Count == 0)
             {

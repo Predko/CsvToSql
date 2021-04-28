@@ -116,37 +116,35 @@ namespace CSVtoDataBase
 
             #region Определяем начальную дату выписки для Debit и Credit.
 
-            DateTime beginDateDebit = DateTime.MinValue;
-            DateTime beginDateCredit = DateTime.MinValue;
+            DateTime beginDateExpenses = (DateTime)reportChanges.Rows[0]["Date"];
+            DateTime beginDateIncome = beginDateExpenses;
 
-            storage.LoadDataTable(nameCreditTable, $"SELECT TOP 1 * FROM [{nameCreditTable}] ORDER BY [Date] DESC");
+            storage.LoadDataTable(incomeTable, $"SELECT TOP 1 * FROM [{incomeTable}] ORDER BY [Date] DESC");
 
-            storage.LoadDataTable(nameDebitTable, $"SELECT TOP 1 * FROM [{nameDebitTable}] ORDER BY [Date] DESC");
+            storage.LoadDataTable(expensesTable, $"SELECT TOP 1 * FROM [{expensesTable}] ORDER BY [Date] DESC");
 
-            if (storage[nameCreditTable].Rows.Count != 0)
+            if (storage[incomeTable].Rows.Count != 0)
             {
-                beginDateCredit = (DateTime)storage[nameCreditTable].Rows[0]["Date"];
+                beginDateIncome = (DateTime)storage[incomeTable].Rows[0]["Date"];
             }
 
-            if (storage[nameDebitTable].Rows.Count != 0)
+            if (storage[expensesTable].Rows.Count != 0)
             {
-                beginDateDebit = (DateTime)storage[nameDebitTable].Rows[0]["Date"];
+                beginDateExpenses = (DateTime)storage[expensesTable].Rows[0]["Date"];
             }
 
             #endregion
 
             #region Загружаем данные из таблиц начиная с соответствующих начальных дат.
 
-            storage.LoadDataTable(nameCreditTable, $"SELECT TOP 1 * FROM [{nameCreditTable}] WHERE [Date] >= '{beginDateCredit}' ORDER BY [Date] DESC");
+            storage.LoadDataTable(incomeTable, $"SELECT TOP 1 * FROM [{incomeTable}] WHERE [Date] >= '{beginDateIncome}' ORDER BY [Date] DESC");
 
-            storage.LoadDataTable(nameDebitTable, $"SELECT TOP 1 * FROM [{nameDebitTable}] WHERE [Date] >= '{beginDateDebit}' ORDER BY [Date] DESC");
+            storage.LoadDataTable(expensesTable, $"SELECT TOP 1 * FROM [{expensesTable}] WHERE [Date] >= '{beginDateExpenses}' ORDER BY [Date] DESC");
 
             #endregion
 
             try
             {
-                storage.UpdateDataBaseAsync("Customers");
-
                 #region Запись данных выписки в таблицы с проверкой на повтор.
 
                 for (int i = 0; i != reportChanges.Rows.Count; i++)
@@ -155,13 +153,13 @@ namespace CSVtoDataBase
 
                     if ((decimal)currentRow["Debit"] != 0)
                     {
-                        if ((DateTime)currentRow["Date"] < beginDateDebit)
+                        if ((DateTime)currentRow["Date"] < beginDateExpenses)
                         {
                             continue;
                         }
 
                         // Проверяем, нет ли такой записи в базе данных.
-                        if (IsContainsOperation(nameDebitTable,
+                        if (IsContainsOperation(expensesTable,
                                                 IgnoreId,
                                                 (int)currentRow["Number"],
                                                 (DateTime)currentRow["Date"]) == true)
@@ -169,24 +167,24 @@ namespace CSVtoDataBase
                             continue;
                         }
 
-                        DataRow newRow = storage[nameDebitTable].NewRow();
+                        DataRow newRow = storage[expensesTable].NewRow();
 
                         // [Id], [Date],    [Summ],      [Number], [Comment]
                         // int,   Date,   decimal(15.2),   int,     nvarchar[10]
                         newRow.ItemArray = new object[] { null, currentRow["Date"], currentRow["Debit"], currentRow["Number"], null };
 
-                        storage[nameDebitTable].Rows.Add(newRow);
+                        storage[expensesTable].Rows.Add(newRow);
                     }
                     else
                     if ((decimal)currentRow["Credit"] != 0)
                     {
-                        if ((DateTime)currentRow["Date"] < beginDateCredit)
+                        if ((DateTime)currentRow["Date"] < beginDateIncome)
                         {
                             continue;
                         }
 
                         // Проверяем, нет ли такой записи в базе данных.
-                        if (IsContainsOperation(nameCreditTable,
+                        if (IsContainsOperation(incomeTable,
                                                 (int)currentRow["CustomerId"],
                                                 (int)currentRow["Number"],
                                                 (DateTime)currentRow["Date"]) == true)
@@ -194,16 +192,21 @@ namespace CSVtoDataBase
                             continue;
                         }
 
-                        DataRow newRow = storage[nameCreditTable].NewRow();
+                        DataRow newRow = storage[incomeTable].NewRow();
 
                         // [Id], [CustomerId],    [Summ],    [Date], [Number], [TypePayment]
                         // int,    int,     decimal(15.2),  Date,    int,       bit
                         newRow.ItemArray = new object[] { null, currentRow["CustomerId"], currentRow["Credit"], currentRow["Date"], currentRow["Number"], true };
 
-                        storage[nameCreditTable].Rows.Add(newRow);
+                        storage[incomeTable].Rows.Add(newRow);
                     }
                 }
                 #endregion
+
+                // Обновляем базу данных
+                storage.UpdateDataBaseAsync(expensesTable);
+
+                storage.UpdateDataBaseAsync(incomeTable);
 
                 MessageBox.Show("База данных обновлена.");
             }

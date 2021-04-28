@@ -15,13 +15,9 @@ namespace CSVtoDataBase
         /// </summary>
         public string ConnectionString { get => connectionString; set => connectionString = value; }
 
-        public string CustomersQueryString;
-
         public StorageDataBase(string connectionString)
         {
             ConnectionString = connectionString;
-
-            CustomersQueryString = "SELECT Id, NameCompany, UNP FROM Customers";
 
             dataSet = new DataSet();
         }
@@ -49,7 +45,7 @@ namespace CSVtoDataBase
         {
             using SqlConnection sqlConnection = new SqlConnection(ConnectionString);
 
-            SqlDataAdapter dataAdapter = new SqlDataAdapter(CustomersQueryString, sqlConnection);
+            SqlDataAdapter dataAdapter = new SqlDataAdapter($"SELECT * FROM {nameTable}", sqlConnection);
 
             SqlCommandBuilder commandBuilder = new SqlCommandBuilder(dataAdapter);
 

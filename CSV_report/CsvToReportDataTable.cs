@@ -42,7 +42,7 @@ namespace CSVtoDataBase
 
             DataTable dtReports = storage["report"];
 
-            storage.LoadDataTable("Customers");
+            storage.LoadDataTable(customerNameTable);
 
             dtReports.Clear();
 
@@ -59,14 +59,17 @@ namespace CSVtoDataBase
 
             int i = 0;
 
-            foreach (var file in filesIn)
+            string currentFile = default;
+
+            try
             {
-                TblProgressText.Text = $"Converting file: {file}";
-
-                PbProgress.Value = i++;
-
-                try
+                foreach (var file in filesIn)
                 {
+                    currentFile = file;
+
+                    TblProgressText.Text = $"Converting file: {file}";
+
+                    PbProgress.Value = i++;
                     using StreamReader sr = new StreamReader(file, encoding: srcEncoding);
 
                     string line;
@@ -96,7 +99,17 @@ namespace CSVtoDataBase
 
                         if (listCustomers.Count != 0)
                         {
-                            Customer customer = listCustomers.Find(s[Name], s[UNP]);
+                            Customer customer;
+
+                            if (s[UNP] == "500563252")
+                            {
+                                // Оплата из бюджета - требуется выбор.
+                                customer = ListCustomers.NotFound;
+                            }
+                            else
+                            {
+                                customer = listCustomers.Find(s[Name], s[UNP]);
+                            }
 
                             if (customer == ListCustomers.NotFound)
                             {
@@ -147,12 +160,15 @@ namespace CSVtoDataBase
 
                     totalRecords += numberRows;
                 }
-                catch (Exception ex)
-                {
-                    MessageAndLogException($"Конвертация файла {file} не удалась.\nОперация прервана", ex);
 
-                    return false;
-                }
+                // Обновляем базу данных клиентов.
+                storage.UpdateDataBaseAsync(customerNameTable);
+            }
+            catch (Exception ex)
+            {
+                MessageAndLogException($"Конвертация файла {currentFile} не удалась.\nОперация прервана", ex);
+
+                return false;
             }
 
             TblProgressText.Text = $"Total {totalRecords} records. Debit = {debit}, Credit = {credit}";

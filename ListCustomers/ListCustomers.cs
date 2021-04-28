@@ -308,7 +308,7 @@ namespace CSVtoDataBase
 
             foreach (Customer current in this)
             {
-                string[] words = current.Name.Split(new char[] { ' ', '\"' }, StringSplitOptions.RemoveEmptyEntries);
+                string[] words = current.Name.Split(new char[] { ' ', '\"', ',', '.', '-' }, StringSplitOptions.RemoveEmptyEntries);
 
                 // Проверяем наличие всех ключевых слов в словаре.
                 // Если такого слова нет добавляем его в список слов с Id данного клиента.
@@ -355,6 +355,7 @@ namespace CSVtoDataBase
                 }
             }
 
+            #region Запись ключевых слов в файл для контроля.
             using StreamWriter sw = new StreamWriter("keywords.txt");
 
             foreach (var customer in this)
@@ -382,7 +383,7 @@ namespace CSVtoDataBase
             {
                 sw.Write(s + ",");
             }
-
+            #endregion
         }
 
         /// <summary>

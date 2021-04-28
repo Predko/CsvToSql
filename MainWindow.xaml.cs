@@ -34,23 +34,23 @@ namespace CSVtoDataBase
     public partial class MainWindow : Window
     {
         /// <summary>
-        /// УНП бюджетных организаций.
+        /// Имя таблицы клиентов.
         /// </summary>
-        private const string UnpBudget = "500563252";
-
-        private ListCustomers listCustomers;
-
-        private StorageDataBase storage;
+        private const string customerNameTable = "CustomersTest";
 
         /// <summary>
         /// Имя таблицы выплат.
         /// </summary>
-        private readonly string nameDebitTable = "Expenses";
+        private const string expensesTable = "ExpensesTest";
 
         /// <summary>
         /// Имя таблицы поступлений.
         /// </summary>
-        private readonly string nameCreditTable = "Income";
+        private const string incomeTable = "IncomeTest";
+
+        private ListCustomers listCustomers;
+
+        private StorageDataBase storage;
 
         private static readonly ILog log = LogManager.GetLogger(typeof(MainWindow));
 
@@ -150,9 +150,9 @@ namespace CSVtoDataBase
 
             storage.Add(dt);
 
-            storage.LoadDataTable("Customers");
+            storage.LoadDataTable(customerNameTable);
 
-            listCustomers = new ListCustomers(storage["Customers"]);
+            listCustomers = new ListCustomers(storage[customerNameTable]);
 
             if (listCustomers.Count == 0)
             {

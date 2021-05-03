@@ -58,14 +58,11 @@
                                Margin="20 0 10 0"/>
                 </DockPanel>
             </StatusBar>
-            <FlowDocumentScrollViewer x:Name="FdsvMakeSqlScriptText" 
-                                      Margin="5" IsToolBarVisible="True">
-                <FlowDocument x:Name="FdMakeSqlScriptText">
-                    <Paragraph x:Name="ParMakeSqlScriptText">
-                        <Run>--SQL скрипт для заполнения таблиц базы данных, данными из банковских выписок.</Run>
-                    </Paragraph>
-                </FlowDocument>
-            </FlowDocumentScrollViewer>
+            <TabControl Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3">
+                <TabItem Header="Income">Данные таблицы Income.</TabItem>
+                <TabItem Header="Expenses">Данные таблицы Expenses.</TabItem>
+                <TabItem Header="Reports">Данные таблицы выписок.</TabItem>
+            </TabControl>
         </DockPanel>
     </Grid>
 </Window>

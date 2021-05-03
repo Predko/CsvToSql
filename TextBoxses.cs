@@ -106,7 +106,7 @@ namespace CSVtoDataBase
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
             {
-                Filter = "All files *.*|*.*|CSV|*.csv|TXT|*.txt|XML|*.xml",
+                Filter = "All files CSV|*.csv|*.*|*.*|TXT|*.txt|XML|*.xml",
                 InitialDirectory = Directory.GetCurrentDirectory(),
                 Multiselect = multiselect
             };

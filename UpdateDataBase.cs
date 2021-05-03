@@ -22,10 +22,14 @@ namespace CSVtoDataBase
                 return;
             }
 
+            PbProgress.Value = 0;
+
             if (ConvertDataFromCSVToReportDataTable(FileNamesCSV.ToArray()) == false)
             {
                 return;
             }
+
+            PbProgress.Value = 0;
 
             UpdateDataBase();
         }
@@ -84,7 +88,7 @@ namespace CSVtoDataBase
         /// </summary>
         private void UpdateDataBase()
         {
-            static bool DataTableIsEmpty(DataTable dt) => dt.Rows.Count == 0;
+            static bool DataTableIsEmpty(DataTable dt) => (dt == null) ? true : dt.Rows.Count == 0;
 
             #region Проверка, указаны ли имена файлов и готова ли таблица данных для обновления базы данных.
 
@@ -114,37 +118,41 @@ namespace CSVtoDataBase
             reportChanges = dv.ToTable();
             #endregion
 
-            #region Определяем начальную дату выписки для Debit и Credit.
-
-            DateTime beginDateExpenses = (DateTime)reportChanges.Rows[0]["Date"];
-            DateTime beginDateIncome = beginDateExpenses;
-
-            storage.LoadDataTable(incomeTable, $"SELECT TOP 1 * FROM [{incomeTable}] ORDER BY [Date] DESC");
-
-            storage.LoadDataTable(expensesTable, $"SELECT TOP 1 * FROM [{expensesTable}] ORDER BY [Date] DESC");
-
-            if (storage[incomeTable].Rows.Count != 0)
-            {
-                beginDateIncome = (DateTime)storage[incomeTable].Rows[0]["Date"];
-            }
-
-            if (storage[expensesTable].Rows.Count != 0)
-            {
-                beginDateExpenses = (DateTime)storage[expensesTable].Rows[0]["Date"];
-            }
-
-            #endregion
-
-            #region Загружаем данные из таблиц начиная с соответствующих начальных дат.
-
-            storage.LoadDataTable(incomeTable, $"SELECT TOP 1 * FROM [{incomeTable}] WHERE [Date] >= '{beginDateIncome}' ORDER BY [Date] DESC");
-
-            storage.LoadDataTable(expensesTable, $"SELECT TOP 1 * FROM [{expensesTable}] WHERE [Date] >= '{beginDateExpenses}' ORDER BY [Date] DESC");
-
-            #endregion
-
             try
             {
+                #region Определяем начальную дату выписки для Debit и Credit.
+
+                DateTime beginDateExpenses = (DateTime)reportChanges.Rows[0]["Date"];
+                DateTime beginDateIncome = beginDateExpenses;
+
+                storage.LoadDataTable(incomeTable, $"SELECT TOP 1 * FROM [{incomeTable}] ORDER BY [Date] DESC");
+
+                storage.LoadDataTable(expensesTable, $"SELECT TOP 1 * FROM [{expensesTable}] ORDER BY [Date] DESC");
+
+                if (storage[incomeTable].Rows.Count != 0)
+                {
+                    beginDateIncome = (DateTime)storage[incomeTable].Rows[0]["Date"];
+                }
+
+                if (storage[expensesTable].Rows.Count != 0)
+                {
+                    beginDateExpenses = (DateTime)storage[expensesTable].Rows[0]["Date"];
+                }
+
+                #endregion
+
+                // Строки запроса для загрузки и обновления базы данных.
+                string queryExpensesFromDate = $"SELECT * FROM [{expensesTable}] WHERE [Date] >= '{beginDateExpenses}' ORDER BY [Date] DESC";
+                string queryIncomeFromDate = $"SELECT * FROM [{incomeTable}] WHERE [Date] >= '{beginDateIncome}' ORDER BY [Date] DESC";
+
+                #region Загружаем данные из таблиц начиная с соответствующих начальных дат.
+
+                storage.LoadDataTable(expensesTable, queryExpensesFromDate);
+
+                storage.LoadDataTable(incomeTable, queryIncomeFromDate);
+
+                #endregion
+
                 #region Запись данных выписки в таблицы с проверкой на повтор.
 
                 for (int i = 0; i != reportChanges.Rows.Count; i++)
@@ -204,9 +212,9 @@ namespace CSVtoDataBase
                 #endregion
 
                 // Обновляем базу данных
-                storage.UpdateDataBaseAsync(expensesTable);
+                storage.AsynchronousDataBaseUpdate(expensesTable, queryExpensesFromDate);
 
-                storage.UpdateDataBaseAsync(incomeTable);
+                storage.AsynchronousDataBaseUpdate(incomeTable, queryIncomeFromDate);
 
                 MessageBox.Show("База данных обновлена.");
             }

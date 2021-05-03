@@ -36,17 +36,17 @@ namespace CSVtoDataBase
         /// <summary>
         /// Имя таблицы клиентов.
         /// </summary>
-        private const string customerNameTable = "CustomersTest";
+        private const string customerNameTable = "Customers";
 
         /// <summary>
         /// Имя таблицы выплат.
         /// </summary>
-        private const string expensesTable = "ExpensesTest";
+        private const string expensesTable = "Expenses";
 
         /// <summary>
         /// Имя таблицы поступлений.
         /// </summary>
-        private const string incomeTable = "IncomeTest";
+        private const string incomeTable = "Income";
 
         private ListCustomers listCustomers;
 
@@ -149,25 +149,6 @@ namespace CSVtoDataBase
             dt.Columns.Add(new DataColumn("UNP", Type.GetType("System.String")));
 
             storage.Add(dt);
-
-            storage.LoadDataTable(customerNameTable);
-
-            listCustomers = new ListCustomers(storage[customerNameTable]);
-
-            if (listCustomers.Count == 0)
-            {
-                // Не удалось загрузить файл с данными о клиентах - делаем кнопку чтения выписок неактивной.
-                BtnUpdateDataBase.IsEnabled = false;
-            }
-
-            // Мостовская ЦРБ.
-            const int CDH_id = 46;
-            Customer customer = listCustomers.GetCustomerAtId(CDH_id);
-
-            customer.AddKeyWord("мостовская");
-            customer.AddKeyWord("районная");
-            customer.AddKeyWord("больница");
-            customer.AddKeyWord("здравоохранени");
         }
     }
 }

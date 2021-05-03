@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 
 namespace CSVtoDataBase
@@ -20,8 +21,8 @@ namespace CSVtoDataBase
         private const string _id = "Id";
 
         private readonly DataRow customerRow;
-
-        public List<string> keyWords;
+        
+        public List<string> keywords;
 
         public Customer(DataRow dr) => customerRow = dr;
 
@@ -30,24 +31,24 @@ namespace CSVtoDataBase
         /// <summary>
         /// Добавляет ключевое слово в список ключевых слов названия данного клиента
         /// </summary>
-        /// <param name="keyWord"></param>
-        public void AddKeyWord(string keyWord)
+        /// <param name="word"></param>
+        public void AddKeyword(string word)
         {
-            if (keyWords.Contains(keyWord) == false)
+            if (keywords.Contains(word) == false)
             {
-                keyWords.Add(Name);
+                keywords.Add(word);
             }
         }
 
         /// <summary>
         /// Удаляет ключевое слово из списка ключевых слов названия данного клиента
         /// </summary>
-        /// <param name="keyWord"></param>
-        public void RemoveKeyWord(string keyWord)
+        /// <param name="word"></param>
+        public void RemoveKeyword(string word)
         {
-            if (keyWords.Contains(keyWord) == true)
+            if (keywords.Contains(word) == true)
             {
-                keyWords.Remove(Name);
+                keywords.Remove(word);
             }
         }
 
@@ -66,14 +67,21 @@ namespace CSVtoDataBase
                 return true;
             }
 
-            if (keyWords.Count == 0)
-            {
-                return false;
-            }
+            string[] words = nameCompany.ToLower().Split(new char[] { ' ', '\"', ',', '.', '-' }, StringSplitOptions.RemoveEmptyEntries);
 
-            foreach (string kw in keyWords)
+            foreach (var kw in keywords)
             {
-                if (name.Contains(kw) == true)
+                int numberOfMatches = 0;
+
+                foreach (string word in words)
+                {
+                    if (kw == word)
+                    {
+                        numberOfMatches++;
+                    }
+                }
+
+                if (numberOfMatches == words.Length)
                 {
                     return true;
                 }
@@ -85,7 +93,11 @@ namespace CSVtoDataBase
         /// <summary>
         /// Идентификатор клиента.
         /// </summary>
-        public int Id { get => (int)customerRow[_id]; set => customerRow[_id] = value; }
+        public int Id 
+        { 
+            get => (int)customerRow[_id]; 
+            set => customerRow[_id] = value; 
+        }
 
         /// <summary>
         /// Название клиента.
@@ -94,7 +106,7 @@ namespace CSVtoDataBase
         {
             get
             {
-                if (customerRow[_nameCompany] is string name)
+                if (customerRow[_nameCompany]is string name)
                 {
                     return name;
                 }
@@ -289,12 +301,6 @@ namespace CSVtoDataBase
 
             InitKeywords();
         }
-        
-        // !!!!!!!!!!!!!!!!
-        // Можно попробовать использовать двоичное дерево для идентификации клиента.
-        // Для этого надо для каждого клиента составить список слов.
-        // Отсортировать этот список у каждого клиента по количеству употребления этих слов у всех клиентов.
-        // Создать двоичное дерево из ключевых слов клиентов, начиная с найболее часто употребимых.
 
         /// <summary>
         /// Генерирует список уникальных ключевых слов для каждого клиента.
@@ -308,7 +314,7 @@ namespace CSVtoDataBase
 
             foreach (Customer current in this)
             {
-                string[] words = current.Name.Split(new char[] { ' ', '\"', ',', '.', '-' }, StringSplitOptions.RemoveEmptyEntries);
+                string[] words = current.Name.ToLower().Split(new char[] { ' ', '\"', ',', '.', '-' }, StringSplitOptions.RemoveEmptyEntries);
 
                 // Проверяем наличие всех ключевых слов в словаре.
                 // Если такого слова нет добавляем его в список слов с Id данного клиента.
@@ -324,14 +330,9 @@ namespace CSVtoDataBase
                         // Проверяем наличие данного слова в списке слов данного клиента.
                         if (customerListKeywords.Contains(word) == true)
                         {
-                            if (customerListKeywords.Count > 1)
-                            {
-                                // Такое слово есть, оно не уникально и оно не единственное слово
-                                // поэтому удаляем его.
-                                customerListKeywords.Remove(word);
+                            customerListKeywords.Remove(word);
 
-                                nonUniqueWords.Add(word);
-                            }
+                            nonUniqueWords.Add(word);
 
                             // Слово не уникально.
                             uniqueWord = false;
@@ -348,9 +349,9 @@ namespace CSVtoDataBase
                     }
 
                     // Если слово уникально - добавляем его в словарь данного клиента.
-                    if (uniqueWord == true)
+                    if (uniqueWord == true && word.Length != 1)
                     {
-                        current.keyWords.Add(word);
+                        current.keywords.Add(word);
                     }
                 }
             }
@@ -362,11 +363,11 @@ namespace CSVtoDataBase
             {
                 sw.WriteLine(customer);
 
-                int count = customer.keyWords.Count;
+                int count = customer.keywords.Count;
 
                 for (int i = 0; i != count; i++)
                 {
-                    sw.Write(customer.keyWords[i]);
+                    sw.Write(customer.keywords[i]);
 
                     if (i == count - 1)
                     {
@@ -397,36 +398,73 @@ namespace CSVtoDataBase
         /// <returns>Число записей в таблице.</returns>
         public int Count => customers.Rows.Count;
 
+
         /// <summary>
-        /// Поиск клиента по УНП и названию.
+        /// Поиск клиента по УНП
         /// </summary>
-        /// <param name="nameCustomer">Название клиента.</param>
         /// <param name="unpCustomer">УНП клиента.</param>
         /// <returns>Экземпляр класса Customer для данного клиента, если поиск успешен, иначе ListCustomers.NotFound = null</returns>
-        public Customer Find(string nameCustomer, string unpCustomer)
+        public Customer FindCustomerByUNP(string unpCustomer)
         {
-            foreach(Customer customer in this)
+            foreach (Customer customer in this)
             {
                 string unp = customer.UNP;
 
-                if (unp.Length == 0)
-                {
-                    if (customer.ThisCustomer(nameCustomer) == true)
-                    {
-                        // В записи данного клиента не было УНП - добавляем.
-                        customer.UNP = unpCustomer;
-
-                        return customer;
-                    }
-                }
-                else
-                if (unp == unpCustomer)
+                if (unp.Length != 0 && unp == unpCustomer)
                 {
                     return customer;
                 }
             }
 
             return NotFound;
+        }
+
+
+        /// <summary>
+        /// Поиск клиента по названию.
+        /// </summary>
+        /// <param name="nameCustomer">Название клиента.</param>
+        /// <returns>Экземпляр класса Customer для данного клиента, если поиск успешен, иначе ListCustomers.NotFound = null</returns>
+        public Customer FindCustomerByName(string nameCustomer)
+        {
+            foreach (Customer customer in this)
+            {
+                if (customer.ThisCustomer(nameCustomer) == true)
+                {
+                    return customer;
+                }
+            }
+
+            return NotFound;
+        }
+
+        /// <summary>
+        /// Поиск клиента по УНП и названию.
+        /// </summary>
+        /// <param name="nameCustomer">Название клиента.</param>
+        /// <param name="unpCustomer">УНП клиента.</param>
+        /// <returns>Экземпляр класса Customer для данного клиента, если поиск успешен, иначе ListCustomers.NotFound = null</returns>
+        public Customer FindCustomer(string nameCustomer, string unpCustomer)
+        {
+            Customer customer = FindCustomerByUNP(unpCustomer);
+
+            if (customer == NotFound)
+            {
+                customer = FindCustomerByName(nameCustomer);
+
+                if (customer == NotFound)
+                {
+                    return NotFound;
+                }
+                
+                if (customer.UNP.Length == 0)
+                {
+                    // В записи данного клиента не было УНП - добавляем.
+                    customer.UNP = unpCustomer;
+                }
+            }
+
+            return customer;
         }
 
         /// <summary>
@@ -445,7 +483,7 @@ namespace CSVtoDataBase
                 keywords[customer.Id] = listKeywords;
             }
 
-            customer.keyWords = listKeywords;
+            customer.keywords = listKeywords;
 
             return customer;
         }
@@ -455,6 +493,14 @@ namespace CSVtoDataBase
             get
             {
                 return GetCustomers(row);
+            }
+        }
+
+        public Customer this[int i]
+        {
+            get
+            {
+                return GetCustomers(customers.Rows[i]);
             }
         }
 

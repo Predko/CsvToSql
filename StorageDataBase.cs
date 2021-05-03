@@ -41,31 +41,50 @@ namespace CSVtoDataBase
         /// Обновляет базу данных из соответствующей таблицы данных.
         /// </summary>
         /// <param name="nameTable">Имя таблицы данных.</param>
-        public async void UpdateDataBaseAsync(string nameTable)
+        /// <param name="queryString">Строка запроса для загрузки базы данных или её части.</param>
+        public void DataBaseUpdate(string nameTable, string queryString = null)
         {
+            if (queryString == null)
+            {
+                queryString = $"SELECT * FROM {nameTable}";
+            }
+
             using SqlConnection sqlConnection = new SqlConnection(ConnectionString);
 
-            SqlDataAdapter dataAdapter = new SqlDataAdapter($"SELECT * FROM {nameTable}", sqlConnection);
+            SqlDataAdapter dataAdapter = new SqlDataAdapter(queryString, sqlConnection);
 
             SqlCommandBuilder commandBuilder = new SqlCommandBuilder(dataAdapter);
 
             string s = commandBuilder.GetInsertCommand().CommandText;
 
-            await Task.Run(() => dataAdapter.Update(dataSet.Tables[nameTable]));
+            dataAdapter.Update(dataSet.Tables[nameTable]);
         }
 
         /// <summary>
-        /// Ассинхронно загружает указанную таблицу из базы данных.
+        /// Асинхронно обновляет базу данных из соответствующей таблицы данных.
         /// </summary>
-        /// <param name="nameTable">Имя таблицы.</param>
-        /// <param name="queryString">Строка sql запроса данных таблицы. 
-        /// Если null - будет загружена вся таблица.
-        /// </param>
-        public void LoadDataTableAsync(string nameTable, string queryString = null)
+        /// <param name="nameTable">Имя таблицы данных.</param>
+        /// <param name="queryString">Строка запроса для загрузки базы данных или её части.</param>
+        public void AsynchronousDataBaseUpdate(string nameTable, string queryString = null)
         {
-            PrepareForLoadDataTable(nameTable, queryString,
-                        async (dataAdapter, nameTable) =>
-                                { await Task.Run(() => dataAdapter.Fill(dataSet.Tables[nameTable])); });
+            Task updateTask = new Task(() =>
+                        {
+                            if (queryString == null)
+                            {
+                                queryString = $"SELECT * FROM {nameTable}";
+                            }
+
+                            using SqlConnection sqlConnection = new SqlConnection(ConnectionString);
+
+                            SqlDataAdapter dataAdapter = new SqlDataAdapter(queryString, sqlConnection);
+
+                            SqlCommandBuilder commandBuilder = new SqlCommandBuilder(dataAdapter);
+
+                            string s = commandBuilder.GetInsertCommand().CommandText;
+                            dataAdapter.Update(dataSet.Tables[nameTable]);
+                        });
+
+            updateTask.Start();
         }
 
         /// <summary>
@@ -77,18 +96,13 @@ namespace CSVtoDataBase
         /// </param>
         public void LoadDataTable(string nameTable, string queryString = null)
         {
-            PrepareForLoadDataTable(nameTable, queryString,
-                        (dataAdapter, nameTable) => dataAdapter.Fill(dataSet.Tables[nameTable]));
-        }
-
-        private void PrepareForLoadDataTable(string nameTable, string queryString, Action<SqlDataAdapter, string> load)
-        {
             string newQueryString = queryString;
 
             if (newQueryString == null)
             {
                 newQueryString = $"SELECT * FROM {nameTable}";
             }
+
             SqlConnection sqlConnection = new SqlConnection(ConnectionString);
 
             SqlDataAdapter dataAdapter = new SqlDataAdapter(newQueryString, sqlConnection);
@@ -102,7 +116,7 @@ namespace CSVtoDataBase
                 dataSet.Tables.Add(nameTable);
             }
 
-            load(dataAdapter, nameTable);
+            dataAdapter.Fill(dataSet.Tables[nameTable]);
         }
     }
 }

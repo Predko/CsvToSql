@@ -6,9 +6,10 @@
         xmlns:local="clr-namespace:CSVtoDataBase.CSV_report"
         mc:Ignorable="d"
         FontFamily="Consolas"
-        Title="Выбор клиента" Height="450" Width="500"
-        SizeToContent="WidthAndHeight" WindowStartupLocation="CenterScreen">
-    <Grid Margin="10">
+        Title="Выбор клиента" Height="450" Width="600"
+        SizeToContent="WidthAndHeight" WindowStartupLocation="CenterScreen"
+        Closed="Window_Closed">
+    <Grid Margin="10" >
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
@@ -19,11 +20,11 @@
         </Grid.RowDefinitions>
         <TextBox x:Name="DescriptionOfPurpose" Grid.Row="0" Margin="5"
                  MinHeight="110"
-                 Width="{Binding ElementName=listBoxCustomers, Path=ActualWidth, Mode=OneWay}"
+                 Width="{Binding ElementName=ListBoxCustomers, Path=ActualWidth, Mode=OneWay}"
                  TextWrapping="Wrap"/>
-        <ListBox x:Name="listBoxCustomers" Grid.Row="1" 
+        <ListBox x:Name="ListBoxCustomers" Grid.Row="1" 
                  Margin="5"
-                 MouseDoubleClick="ListBoxCustomers_MouseDoubleClick">
+                 MouseDoubleClick="ListBoxCustomers_MouseDoubleClick" SelectionChanged="ListBoxCustomers_SelectionChanged">
                 <ListBox.ItemTemplate>
                         <DataTemplate>
                             <DockPanel LastChildFill="True">
@@ -34,9 +35,19 @@
                         </DataTemplate>
                 </ListBox.ItemTemplate>
         </ListBox>
-        <StackPanel Grid.Row="2" Orientation="Horizontal" FlowDirection="RightToLeft">
-            <Button IsCancel="True" MinWidth="80" Margin="10" HorizontalAlignment="Right">Cancel</Button>
-            <Button IsDefault="True" Click="AcceptId_Click" MinWidth="80" Margin="10" HorizontalAlignment="Right">Ok</Button>
+        <StackPanel Grid.Row="2">
+            <TextBox x:Name="TbNameCompany" Margin="10 0 10 0"/>
+            <StackPanel Orientation="Horizontal" FlowDirection="RightToLeft">
+                <Button IsCancel="True" MinWidth="60" Margin="10" HorizontalAlignment="Right">Cancel</Button>
+                <Button IsDefault="True" Click="AcceptId_Click" MinWidth="60" Margin="10" HorizontalAlignment="Right">Ok</Button>
+                <Button x:Name="BtnChangeName" 
+                        IsDefault="true"
+                        Click="BtnChangeName_Click" 
+                        Margin="30 10 10 10" Padding="10 0 10 0">
+                    Выбрать это название
+                </Button>
+                <CheckBox Content="Изменить УНП" x:Name="ChbChangeUNP" IsChecked="True" Margin="10"/>
+            </StackPanel>
         </StackPanel>
     </Grid>
 </Window>

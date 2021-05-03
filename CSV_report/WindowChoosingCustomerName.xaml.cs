@@ -12,55 +12,31 @@ namespace CSVtoDataBase.CSV_report
     /// </summary>
     public partial class WindowChoosingCustomerName : Window
     {
-        private readonly ObservableCollection<Customer> list = new ObservableCollection<Customer>();
+        public int IdCompany { get; set; }
 
-        public Customer SelectedCustomer { get; set; }
+        public string NewNameCompany { get; set; }
+
+        public Customer SelectedCustomer;
 
 
-        public WindowChoosingCustomerName(ListCustomers lc)
+        public WindowChoosingCustomerName(ObservableCollection<Customer> list, string nameCompany)
         {
             InitializeComponent();
 
-            InitListBox(lc);
+            TbNameCompany.Text = nameCompany;
+
+            IdCompany = -1;
+
+            NewNameCompany = null;
+
+            BtnChangeName.IsEnabled = false;
+
+            ListBoxCustomers.ItemsSource = list;
+
+            ListBoxCustomers.Items.SortDescriptions.Add(new SortDescription("", ListSortDirection.Ascending));
         }
 
-        private void InitListBox(ListCustomers lc)
-        {
-            int maxCountStirng = 0;
-
-            Customer maxStringCustomer = null;
-
-            foreach (Customer c in lc)
-            {
-                list.Add(c);
-
-                if (maxCountStirng < c.Name.Length)
-                {
-                    maxCountStirng = c.Name.Length;
-
-                    maxStringCustomer = c;
-                }
-            }
-
-            string text = maxStringCustomer.ToString();
-
-            FormattedText ft = new FormattedText(text, CultureInfo.CurrentUICulture, listBoxCustomers.FlowDirection,
-                                                 new Typeface(listBoxCustomers.FontFamily, listBoxCustomers.FontStyle,
-                                                              listBoxCustomers.FontWeight, listBoxCustomers.FontStretch),
-                                                 listBoxCustomers.FontSize, listBoxCustomers.Foreground, VisualTreeHelper.GetDpi(listBoxCustomers).PixelsPerDip);
-
-            //listBoxCustomers.Width = listBoxCustomers.Margin.Left + listBoxCustomers.Margin.Right
-            //                     + listBoxCustomers.BorderThickness.Left + listBoxCustomers.BorderThickness.Right
-            //                     + Math.Floor(ft.Width + 1) + Math.Floor(SystemParameters.VerticalScrollBarWidth + 5);
-
-
-
-            //DescriptionOfPurpose.Width = listBoxCustomers.Width;
-
-            listBoxCustomers.ItemsSource = list;
-
-            listBoxCustomers.Items.SortDescriptions.Add(new SortDescription("", ListSortDirection.Ascending));
-        }
+        public bool? NeedChangeUNP() => ChbChangeUNP.IsChecked;
 
         private void AcceptId_Click(object sender, RoutedEventArgs e)
         {
@@ -74,9 +50,42 @@ namespace CSVtoDataBase.CSV_report
 
         private void SelectedItem()
         {
-            SelectedCustomer = ((Customer)listBoxCustomers.SelectedItem);
+            if (ListBoxCustomers.SelectedItem == null)
+            {
+                DialogResult = false;
+            }
+            else
+            {
+                SelectedCustomer = ((Customer)ListBoxCustomers.SelectedItem);
 
-            DialogResult = true;
+                DialogResult = true;
+            }
+        }
+
+        private void BtnChangeName_Click(object sender, RoutedEventArgs e)
+        {
+            SelectedItem();
+
+            //NewNameCompany = TbNameCompany.Text;
+            SelectedCustomer.Name = TbNameCompany.Text;
+        }
+
+        private void ListBoxCustomers_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (ListBoxCustomers.SelectedItem != null)
+            {
+                BtnChangeName.IsEnabled = true;
+            }
+        }
+
+        private void Window_Closed(object sender, System.EventArgs e)
+        {
+            //if (ListBoxCustomers.SelectedItem != null)
+            //{
+            //    //IdCompany = ((Customer)ListBoxCustomers.SelectedItem).Id;
+            //}
+
+            ListBoxCustomers.ItemsSource = null;
         }
     }
 }

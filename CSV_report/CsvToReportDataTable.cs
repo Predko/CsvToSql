@@ -1,5 +1,6 @@
 ﻿using CSVtoDataBase.CSV_report;
 using System;
+using System.Collections.ObjectModel;
 using System.Data;
 using System.IO;
 using System.Text;
@@ -40,14 +41,6 @@ namespace CSVtoDataBase
             const int Name = 8;        // Наименование контрагента
             const int UNP = 9;         // УНП контрагента
 
-            DataTable dtReports = storage["report"];
-
-            storage.LoadDataTable(customerNameTable);
-
-            dtReports.Clear();
-
-            dtReports.AcceptChanges();
-
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             var srcEncoding = Encoding.GetEncoding(1251);
 
@@ -63,6 +56,23 @@ namespace CSVtoDataBase
 
             try
             {
+                storage.LoadDataTable(customerNameTable);
+
+                listCustomers = new ListCustomers(storage[customerNameTable]);
+
+                if (listCustomers.Count == 0)
+                {
+                    MessageBox.Show("Не удалось загрузить данные клиентов.");
+
+                    return false;
+                }
+
+                DataTable dtReports = storage["report"];
+
+                dtReports.Clear();
+
+                dtReports.AcceptChanges();
+
                 foreach (var file in filesIn)
                 {
                     currentFile = file;
@@ -99,24 +109,49 @@ namespace CSVtoDataBase
 
                         if (listCustomers.Count != 0)
                         {
-                            Customer customer;
+                            Customer customer = ListCustomers.NotFound;
 
-                            if (s[UNP] == "500563252")
+                            string sUNP = s[UNP];
+                            
+                            // Пробуем найти УНП в назначении платежа.
+                            string UNPstring = "УНП";
+
+                            int indexUNP = s[Purpose].IndexOf(UNPstring);
+
+                            bool UnpFromPurpose = false;
+
+                            if (indexUNP != -1)
                             {
-                                // Оплата из бюджета - требуется выбор.
-                                customer = ListCustomers.NotFound;
+                                indexUNP = s[Purpose].IndexOfAny("0123456789".ToCharArray(), indexUNP);
+                                
+                                sUNP = s[Purpose].Substring(indexUNP, 9);
+
+                                // Проверяем, является ли строка УНП.
+                                if (int.TryParse(sUNP, out int _) == true)
+                                {
+                                    UnpFromPurpose = true;
+
+                                    customer = listCustomers.FindCustomer(s[Purpose], sUNP);
+                                }
+                                else
+                                {
+                                    sUNP = s[UNP];
+                                }
                             }
                             else
                             {
-                                customer = listCustomers.Find(s[Name], s[UNP]);
+                                customer = listCustomers.FindCustomer(s[Name], sUNP);
                             }
 
                             if (customer == ListCustomers.NotFound)
                             {
-                                // Клиент не найден, предлагаем пользователю выбрать клиента из списка.
-                                WindowChoosingCustomerName choosingCustomerName = new WindowChoosingCustomerName(listCustomers);
+                                ObservableCollection<Customer> listItems = new ObservableCollection<Customer>(listCustomers);
 
-                                choosingCustomerName.DescriptionOfPurpose.Text = $"УНП: {s[UNP]}, Номер ПП: {s[Number].Trim('\"', '=')} " +
+                                //Предложить изменить название организации при выборе.
+                                // Клиент не найден, предлагаем пользователю выбрать клиента из списка.
+                                WindowChoosingCustomerName choosingCustomerName = new WindowChoosingCustomerName(listItems, s[Name].Trim());
+
+                                choosingCustomerName.DescriptionOfPurpose.Text = $"УНП: {sUNP}, {s[Name].Trim()}, Номер ПП: {s[Number].Trim('\"', '=')} " +
                                                 $"Дата: {s[Date]} Сумма: {s[Equivalent]}\n" + s[Purpose];
 
                                 if (choosingCustomerName.ShowDialog() == false || choosingCustomerName.SelectedCustomer == null)
@@ -128,9 +163,10 @@ namespace CSVtoDataBase
 
                                 customer = choosingCustomerName.SelectedCustomer;
 
-                                if (customer.UNP.Length == 0)
+                                if (choosingCustomerName.NeedChangeUNP() == true 
+                                    && (customer.UNP.Length == 0 || UnpFromPurpose == true))
                                 {
-                                    customer.UNP = s[UNP];
+                                    customer.UNP = sUNP;
                                 }
                             }
 
@@ -162,7 +198,7 @@ namespace CSVtoDataBase
                 }
 
                 // Обновляем базу данных клиентов.
-                storage.UpdateDataBaseAsync(customerNameTable);
+                storage.DataBaseUpdate(customerNameTable);
             }
             catch (Exception ex)
             {

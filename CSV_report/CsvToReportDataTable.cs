@@ -44,14 +44,6 @@ namespace CSVtoDataBase
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             var srcEncoding = Encoding.GetEncoding(1251);
 
-            int totalRecords = 0;
-
-            decimal debit = 0, credit = 0;
-
-            PbProgress.Maximum = filesIn.Length - 1;
-
-            int i = 0;
-
             string currentFile = default;
 
             try
@@ -73,13 +65,22 @@ namespace CSVtoDataBase
 
                 dtReports.AcceptChanges();
 
+                decimal debit = 0, credit = 0;
+
+                int totalRecords = 0;
+                
+                PbProgress.Maximum = filesIn.Length;
+
+                int numberOfFile = 0;
+                
                 foreach (var file in filesIn)
                 {
                     currentFile = file;
 
                     TblProgressText.Text = $"Converting file: {file}";
 
-                    PbProgress.Value = i++;
+                    PbProgress.Value = numberOfFile++;
+
                     using StreamReader sr = new StreamReader(file, encoding: srcEncoding);
 
                     string line;
@@ -199,6 +200,10 @@ namespace CSVtoDataBase
 
                 // Обновляем базу данных клиентов.
                 storage.DataBaseUpdate(customerNameTable);
+
+                TblProgressText.Text = $"Всего {totalRecords} записей. Расход = {debit}, Приход = {credit}";
+
+                PbProgress.Value = numberOfFile;
             }
             catch (Exception ex)
             {
@@ -206,10 +211,6 @@ namespace CSVtoDataBase
 
                 return false;
             }
-
-            TblProgressText.Text = $"Total {totalRecords} records. Debit = {debit}, Credit = {credit}";
-
-            PbProgress.Value = i;
 
             return true;
         }

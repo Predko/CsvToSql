@@ -155,8 +155,17 @@ namespace CSVtoDataBase
 
                 #region Запись данных выписки в таблицы с проверкой на повтор.
 
+                // Число обновлённых записей бызы данных
+                int numberOfEntriesAdded = 0;
+
+                PbProgress.Maximum = reportChanges.Rows.Count;
+
+                int numberCurrentRecord = 0;
+
                 for (int i = 0; i != reportChanges.Rows.Count; i++)
                 {
+                    PbProgress.Value = numberCurrentRecord++;
+                    
                     DataRow currentRow = reportChanges.Rows[i];
 
                     if ((decimal)currentRow["Debit"] != 0)
@@ -208,6 +217,8 @@ namespace CSVtoDataBase
 
                         storage[incomeTable].Rows.Add(newRow);
                     }
+
+                    numberOfEntriesAdded++;
                 }
                 #endregion
 
@@ -216,10 +227,14 @@ namespace CSVtoDataBase
 
                 storage.AsynchronousDataBaseUpdate(incomeTable, queryIncomeFromDate);
 
+                TblProgressText.Text += $"\tДобавлено {numberOfEntriesAdded} записей в базу данных.";
+
                 MessageBox.Show("База данных обновлена.");
             }
             catch (Exception ex)
             {
+                TblProgressText.Text += "Не удалось обновить базу данных.";
+
                 MessageAndLogException("Не удалось обновить базу данных.", ex);
             }
         }

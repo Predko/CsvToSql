@@ -32,8 +32,6 @@ namespace CSVtoDataBase
             waterMark = new WaterMarkForTextBox();
 
             waterMark.AddWaterMark(tbFilesCSV, emptyReportsFileName, Brushes.Gray, FileNamesCSV);
-
-            waterMark.AddWaterMark(TbNameDataBase, emptyDataBaseName, Brushes.Gray, null);
         }
 
         #region События для обработки водяного знака

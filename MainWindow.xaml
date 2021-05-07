@@ -7,18 +7,9 @@
         mc:Ignorable="d"
         FontFamily="Consolas"
         Title="Преобразование CSV файлов интернет банкинга БелАпб" Height="450" Width="900">
+
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition x:Name="StackPanelGridColumn" Width="*"/>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height=".4*"/>
-            <RowDefinition Height="1*"/>
-        </Grid.RowDefinitions>
-        <GridSplitter Grid.Column="1" ShowsPreview="False" Width="4" HorizontalAlignment="Center"/>
-        <DockPanel Grid.Row="1" Grid.ColumnSpan="3">
+        <DockPanel LastChildFill="True">
             <StatusBar  DockPanel.Dock="Bottom" Height="20">
                 <DockPanel LastChildFill="True">
                     <ProgressBar x:Name="PbProgress" DockPanel.Dock="Left"
@@ -30,8 +21,8 @@
                                Margin="20 0 10 0"/>
                 </DockPanel>
             </StatusBar>
-            <TabControl Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3">
-                <TabItem Header="Чтение выписки">
+            <TabControl SelectionChanged="TabControl_SelectionChanged">
+                <TabItem Header="Чтение выписки" Tag="ReportReading">
                     <DockPanel LastChildFill="True">
                         <TextBlock Text="Файлы выписок:" DockPanel.Dock="Top" Margin="10 5 10 5"/>
                         <Button x:Name="BtnUpdateDataBase" DockPanel.Dock="Bottom"
@@ -49,9 +40,53 @@
                                  ToolTip="Двойной клик - для выбора файла на диске"/>
                     </DockPanel>
                 </TabItem>
-                <TabItem Header="Income">Данные таблицы Income.</TabItem>
-                <TabItem Header="Expenses">Данные таблицы Expenses.</TabItem>
-                <TabItem Header="Reports">Данные таблицы выписок.</TabItem>
+                <TabItem Header="Income" Tag="Income">
+                    <DataGrid x:Name="DgIncome" IsReadOnly="True">
+
+                    </DataGrid>
+                </TabItem>
+                <TabItem Header="Customers"  Tag="Customers">
+                    <Grid>
+                        <DataGrid x:Name="DgCustomers" AutoGenerateColumns="False" IsReadOnly="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Id" Binding="{Binding Id}"/>
+                                <DataGridTextColumn Header="УНП" Binding="{Binding UNP}"/>
+                                <DataGridTextColumn Header="Название организации" Binding="{Binding Name}"
+                                                    Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </TabItem>
+                <TabItem Header="Expenses" Tag="Expenses">
+                    <Grid>
+                        <DataGrid x:Name="DgExpenses" IsReadOnly="False">
+                        </DataGrid>
+                    </Grid>
+                </TabItem>
+                <TabItem Header="Reports" Tag="Reports">
+                    <Grid x:Name="GReports" Loaded="GReports_Loaded">
+                        <DataGrid x:Name="DgReport" AutoGenerateColumns="False" 
+                                  FrozenColumnCount="1" IsReadOnly="True">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn x:Name="DgtcNameCompany" Header="Название организации" Binding="{Binding NameCompany}"/>
+                                <DataGridTextColumn Header="Дата" Binding="{Binding Date, StringFormat={}{0:dd.MM.yy}}"/>
+                                <DataGridTextColumn Header="Номер ПП" Binding="{Binding Number}"/>
+                                <DataGridTextColumn Header="Приход" Binding="{Binding Credit}"/>
+                                <DataGridTextColumn Header="Расход" Binding="{Binding Debit}"/>
+                                <DataGridTextColumn Header="УНП" Binding="{Binding UNP}"/>
+                                <DataGridTextColumn Header="Код банка" Binding="{Binding BankCode}"/>
+                                <DataGridTextColumn Header="Расчётный счёт" Binding="{Binding CorrAccount}"/>
+                            </DataGrid.Columns>
+                            <DataGrid.RowDetailsTemplate >
+                                <DataTemplate>
+                                    <TextBlock x:Name="TblDetailColumn"
+                                               Text="{Binding Purpose}" Background="LightYellow" 
+                                               TextWrapping="Wrap"/>
+                                </DataTemplate>
+                            </DataGrid.RowDetailsTemplate>
+                        </DataGrid>
+                    </Grid>
+                </TabItem>
             </TabControl>
         </DockPanel>
     </Grid>

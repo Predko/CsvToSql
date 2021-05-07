@@ -39,7 +39,7 @@ namespace CSVtoDataBase
                 TABLE "Expenses"(
                  "Id" INTEGER NOT NULL IDENTITY PRIMARY KEY,
                  "Date" DATE,
-                 "Summ" DECIMAL(15, 2),
+                 "Value" DECIMAL(15, 2),
                  "Number" INTEGER,
                  "Comment" VARCHAR(10))
 
@@ -60,7 +60,7 @@ namespace CSVtoDataBase
                  "CustomerId" INTEGER,
                  "Date" DATE,
                  "Number" INTEGER,
-                 "Summ" DECIMAL(15, 2),
+                 "Price" DECIMAL(15, 2),
                  "Prepayment" DECIMAL(15, 2),
                  "Available" BOOLEAN,
                  "File" VARCHAR(255),
@@ -69,15 +69,15 @@ namespace CSVtoDataBase
                  TABLE "Income"(
                  "Id" INTEGER NOT NULL IDENTITY PRIMARY KEY,
                  "CustomerId" INTEGER,
-                 "Summ" DECIMAL(15, 2),
+                 "Value" DECIMAL(15, 2),
                  "Date" DATE,
                  "Number" INTEGER,
                  "TypePaiment" BOOLEAN,
 
                  INSERT INTO "Customers"("Id","NameCompany","Account","City","Account1","Region","PhoneNumber","Fax","Mail","File","UNP")
-                 INSERT INTO "Expenses"("Id","Date","Summ","Number","Comment")
-                 INSERT INTO "Contracts"("Id","CustomerId","Date","Number","Summ","Prepayment","Available","File","Comment")
-                 INSERT INTO "Income"("Id","CustomerId","Summ","Date","Number","TypePaiment")
+                 INSERT INTO "Expenses"("Id","Date","Value","Number","Comment")
+                 INSERT INTO "Contracts"("Id","CustomerId","Date","Number","Value","Prepayment","Available","File","Comment")
+                 INSERT INTO "Income"("Id","CustomerId","Value","Date","Number","TypePaiment")
 
                  Колонки таблицы Report:
                  (Id CustomerId BankCode CorrAccount Number Debit Credit Equivalent Date Purpose NameCompany UNP)*/
@@ -186,7 +186,7 @@ namespace CSVtoDataBase
 
                         DataRow newRow = storage[expensesTable].NewRow();
 
-                        // [Id], [Date],    [Summ],      [Number], [Comment]
+                        // [Id], [Date],    [Value],      [Number], [Comment]
                         // int,   Date,   decimal(15.2),   int,     nvarchar[10]
                         newRow.ItemArray = new object[] { null, currentRow["Date"], currentRow["Debit"], currentRow["Number"], null };
 
@@ -211,7 +211,7 @@ namespace CSVtoDataBase
 
                         DataRow newRow = storage[incomeTable].NewRow();
 
-                        // [Id], [CustomerId],    [Summ],    [Date], [Number], [TypePayment]
+                        // [Id], [CustomerId],    [Value],    [Date], [Number], [TypePayment]
                         // int,    int,     decimal(15.2),  Date,    int,       bit
                         newRow.ItemArray = new object[] { null, currentRow["CustomerId"], currentRow["Credit"], currentRow["Date"], currentRow["Number"], true };
 
@@ -227,9 +227,11 @@ namespace CSVtoDataBase
 
                 storage.AsynchronousDataBaseUpdate(incomeTable, queryIncomeFromDate);
 
-                TblProgressText.Text += $"\tДобавлено {numberOfEntriesAdded} записей в базу данных.";
+                TblProgressText.Text += "\t" + $"Добавлено {numberOfEntriesAdded} записей в базу данных.";
 
-                MessageBox.Show("База данных обновлена.");
+                MessageBox.Show((numberOfEntriesAdded == 0) 
+                                    ? "База данных не изменена." 
+                                    : "База данных обновлена.\n" + $"Добавлено {numberOfEntriesAdded} записей в базу данных.");
             }
             catch (Exception ex)
             {

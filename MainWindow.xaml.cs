@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Data;
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace CSVtoDataBase
 {
@@ -149,6 +150,76 @@ namespace CSVtoDataBase
             dt.Columns.Add(new DataColumn("UNP", Type.GetType("System.String")));
 
             storage.Add(dt);
+
+            DgReport.ItemsSource = dt.DefaultView;
+        }
+
+        private void TabControl_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            DataTable dt;
+
+            TabItem item = (sender as TabControl).SelectedItem as TabItem;
+
+            switch (item.Tag)
+            {
+                case "ReportReading":
+                    break;
+
+                case "Income":
+                    dt = storage[incomeTable];
+                    if (dt != null)
+                    {
+                        DgIncome.ItemsSource = dt.DefaultView;
+                    }
+                    else
+                    {
+                        DgIncome.ItemsSource = null;
+                    }
+
+                    break;
+
+                case "Expenses":
+                    break;
+
+                case "Customers":
+                    if (listCustomers != null && listCustomers.Count != 0)
+                    {
+                        DgCustomers.ItemsSource = listCustomers;
+                    }
+                    else
+                    {
+                        DgCustomers.ItemsSource = null;
+                    }
+
+                    break;
+
+                case "Reports":
+                    dt = storage["report"];
+                    if (dt != null)
+                    {
+                        DgReport.ItemsSource = dt.DefaultView;
+                    }
+                    else
+                    {
+                        DgReport.ItemsSource = null;
+                    }
+
+                    break;
+            }
+        }
+
+        private void GReports_Loaded(object sender, RoutedEventArgs e)
+        {
+            GReports.Loaded += new RoutedEventHandler(SetMinWidths);
+        }
+
+        public void SetMinWidths(object source, EventArgs e)
+        {
+            foreach (var column in DgReport.Columns)
+            {
+                column.MinWidth = column.ActualWidth;
+                column.Width = new DataGridLength(1, DataGridLengthUnitType.Star);
+            }
         }
     }
 }

@@ -13,22 +13,6 @@ namespace CSVtoDataBase
         /// <param name="e"></param>
         private void BtnUpdateDataBase_Click(object sender, RoutedEventArgs e)
         {
-            if (waterMark.WaterMarkTextBoxIsEmpty(tbFilesCSV) == true)
-            {
-                MessageForEmptyTextBox messageBox = new MessageForEmptyTextBox(tbFilesCSV);
-
-                messageBox.Show("Укажите файлы выписки");
-
-                return;
-            }
-
-            PbProgress.Value = 0;
-
-            if (ConvertDataFromCSVToReportDataTable(FileNamesCSV.ToArray()) == false)
-            {
-                return;
-            }
-
             PbProgress.Value = 0;
 
             UpdateDataBase();

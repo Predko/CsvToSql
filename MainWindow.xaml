@@ -26,10 +26,16 @@
                     <DockPanel LastChildFill="True">
                         <TextBlock Text="Файлы выписок:" DockPanel.Dock="Top" Margin="10 5 10 5"/>
                         <Button x:Name="BtnUpdateDataBase" DockPanel.Dock="Bottom"
-                                Content="Обновить базу данных." 
+                                Content="Обновить базу данных" 
                                 Margin="10 5 10 5"
+                                IsEnabled="False"
                                 Click="BtnUpdateDataBase_Click"
-                                ToolTip="Создаёт SQL скрипт файл из банковских выписок."/>
+                                ToolTip="Обновляет базу данных данными, прочитанными из банковских выписок."/>
+                        <Button x:Name="BtnReadingReports" DockPanel.Dock="Bottom"
+                                Content="Читать данные выписок" 
+                                Margin="10 5 10 5"
+                                Click="BtnReadingReports_Click"
+                                ToolTip="Читает данные из банковских выписок."/>
                         <TextBox x:Name="tbFilesCSV" DockPanel.Dock="Top"
                                  TextWrapping="Wrap"
                                  MinWidth="400"
@@ -39,11 +45,6 @@
                                  MouseDoubleClick="TbWm_MouseDoubleClick" 
                                  ToolTip="Двойной клик - для выбора файла на диске"/>
                     </DockPanel>
-                </TabItem>
-                <TabItem Header="Income" Tag="Income">
-                    <DataGrid x:Name="DgIncome" IsReadOnly="True">
-
-                    </DataGrid>
                 </TabItem>
                 <TabItem Header="Customers"  Tag="Customers">
                     <Grid>
@@ -57,18 +58,34 @@
                         </DataGrid>
                     </Grid>
                 </TabItem>
+                <TabItem Header="Income" Tag="Income">
+                    <DataGrid x:Name="DgIncome" IsReadOnly="True" AutoGenerateColumns="False">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Id клиента" Binding="{Binding CustomerId}"/>
+                            <DataGridTextColumn Header="Дата" Binding="{Binding Date, StringFormat={}{0:dd.MM.yy}}"/>
+                            <DataGridTextColumn Header="Номер ПП" Binding="{Binding Number}"/>
+                            <DataGridTextColumn Header="Сумма" Binding="{Binding Value}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </TabItem>
                 <TabItem Header="Expenses" Tag="Expenses">
                     <Grid>
-                        <DataGrid x:Name="DgExpenses" IsReadOnly="False">
+                        <DataGrid x:Name="DgExpenses" IsReadOnly="False" AutoGenerateColumns="False">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Дата" Binding="{Binding Date, StringFormat={}{0:dd.MM.yy}}"/>
+                                <DataGridTextColumn Header="Номер ПП" Binding="{Binding Number}"/>
+                                <DataGridTextColumn Header="Сумма" Binding="{Binding Value}"/>
+                            </DataGrid.Columns>
                         </DataGrid>
                     </Grid>
                 </TabItem>
                 <TabItem Header="Reports" Tag="Reports">
-                    <Grid x:Name="GReports" Loaded="GReports_Loaded">
+                    <Grid x:Name="GReports" >
                         <DataGrid x:Name="DgReport" AutoGenerateColumns="False" 
-                                  FrozenColumnCount="1" IsReadOnly="True">
+                                  FrozenColumnCount="1" IsReadOnly="True" Loaded="DgReport_Loaded">
                             <DataGrid.Columns>
-                                <DataGridTextColumn x:Name="DgtcNameCompany" Header="Название организации" Binding="{Binding NameCompany}"/>
+                                <DataGridTextColumn x:Name="DgtcNameCompany" Header="Название организации" 
+                                                    Binding="{Binding NameCompany}"/>
                                 <DataGridTextColumn Header="Дата" Binding="{Binding Date, StringFormat={}{0:dd.MM.yy}}"/>
                                 <DataGridTextColumn Header="Номер ПП" Binding="{Binding Number}"/>
                                 <DataGridTextColumn Header="Приход" Binding="{Binding Credit}"/>

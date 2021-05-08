@@ -79,10 +79,10 @@ namespace CSVtoDataBase.CSV_report
 
         private void LvChooseCustomer_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            if (LvChooseCustomer.SelectedItem != null)
-            {
-                BtnChangeName.IsEnabled = true;
-            }
+            bool isEnabled = (LvChooseCustomer.SelectedItem != null);
+            
+            BtnChangeName.IsEnabled = isEnabled;
+            BtnOk.IsEnabled = isEnabled;
         }
 
         private void Window_Closed(object sender, System.EventArgs e)

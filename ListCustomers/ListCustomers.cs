@@ -106,7 +106,7 @@ namespace CSVtoDataBase
         {
             get
             {
-                if (customerRow[_nameCompany]is string name)
+                if (customerRow[_nameCompany] is string name)
                 {
                     return name;
                 }
@@ -355,40 +355,10 @@ namespace CSVtoDataBase
                     }
                 }
             }
-
-            #region Запись ключевых слов в файл для контроля.
-            using StreamWriter sw = new StreamWriter("keywords.txt");
-
-            foreach (var customer in this)
-            {
-                sw.WriteLine(customer);
-
-                int count = customer.keywords.Count;
-
-                for (int i = 0; i != count; i++)
-                {
-                    sw.Write(customer.keywords[i]);
-
-                    if (i == count - 1)
-                    {
-                        sw.Write("\n\n");
-                    }
-                    else
-                    {
-                        sw.Write(",");
-                    }
-                }
-            }
-
-            foreach (var s in nonUniqueWords)
-            {
-                sw.Write(s + ",");
-            }
-            #endregion
         }
 
         /// <summary>
-        /// Указывает, что клиент отсутствует.
+        /// Указывает, что клиент не найден.
         /// </summary>
         public const Customer NotFound = null;
 

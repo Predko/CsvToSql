@@ -1,15 +1,49 @@
-﻿using CSVtoDataBase.CSV_report;
-using System;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Data;
 using System.IO;
 using System.Text;
 using System.Windows;
+using System.Windows.Input;
 
 namespace CSVtoDataBase
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, INotifyPropertyChanged
     {
+        /// <summary>
+        /// Список имён файлов выписок. Выбирается пользователем.
+        /// </summary>
+        private readonly List<string> FileNamesCSV = new List<string>();
+
+        #region Команда ReportsRead
+
+        public void ReadReports_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (waterMark.WaterMarkTextBoxIsEmpty(tbFilesCSV) == true)
+            {
+                MessageForEmptyTextBox messageBox = new MessageForEmptyTextBox(tbFilesCSV);
+
+                messageBox.Show("Укажите файлы выписки");
+
+                return;
+            }
+
+            if (ConvertDataFromCSVToReportDataTable(FileNamesCSV) == true)
+            {
+                IsDatabaseUpdated = false;
+
+                IsReportsRead = true;
+            }
+        }
+
+        public void ReadReports_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = (FileNamesCSV.Count != 0);
+        }
+        #endregion
+
         /// <summary>
         /// Читает текстовые данные из файлов банковской выписки
         /// интернет-банкинга Белапб в формате CSV из filesIn
@@ -28,7 +62,7 @@ namespace CSVtoDataBase
         /// </summary>
         /// <param name="filesIn">Массив строк с именами файлов</param>
         /// <returns>True - если чтение выписок успешно, иначе - false.</returns>
-        private bool ConvertDataFromCSVToReportDataTable(string[] filesIn)
+        private bool ConvertDataFromCSVToReportDataTable(List<string> filesIn)
         {
             const int BankCode = 0;    // Код банка
             const int Account = 1;     // Счет-корреспондент
@@ -44,7 +78,7 @@ namespace CSVtoDataBase
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             var srcEncoding = Encoding.GetEncoding(1251);
 
-            string currentFile = default;
+            string currentFile = string.Empty;
 
             try
             {
@@ -59,7 +93,7 @@ namespace CSVtoDataBase
                     return false;
                 }
 
-                DataTable dtReports = storage["report"];
+                DataTable dtReports = storage[reportsTable];
 
                 dtReports.Clear();
 
@@ -69,7 +103,7 @@ namespace CSVtoDataBase
 
                 int totalRecords = 0;
                 
-                PbProgress.Maximum = filesIn.Length;
+                PbProgress.Maximum = filesIn.Count;
 
                 int numberOfFile = 0;
                 
@@ -146,11 +180,8 @@ namespace CSVtoDataBase
 
                             if (customer == ListCustomers.NotFound)
                             {
-                                ObservableCollection<Customer> listItems = new ObservableCollection<Customer>(listCustomers);
-
-                                //Предложить изменить название организации при выборе.
                                 // Клиент не найден, предлагаем пользователю выбрать клиента из списка.
-                                WindowChoosingCustomerName choosingCustomerName = new WindowChoosingCustomerName(listItems, s[Name].Trim());
+                                WindowChoosingCustomerName choosingCustomerName = new WindowChoosingCustomerName(listCustomers, s[Name].Trim());
 
                                 choosingCustomerName.DescriptionOfPurpose.Text = $"УНП: {sUNP}, {s[Name].Trim()}, Номер ПП: {s[Number].Trim('\"', '=')} " +
                                                 $"Дата: {s[Date]} Сумма: {s[Equivalent]}\n" + s[Purpose];

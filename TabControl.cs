@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data;
 using System.Text;
 using System.Windows;
@@ -7,7 +8,7 @@ using System.Windows.Controls;
 
 namespace CSVtoDataBase
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, INotifyPropertyChanged
     {
         /// <summary>
         /// Saves the state of the status bar
@@ -31,8 +32,6 @@ namespace CSVtoDataBase
 
         private void TabControl_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            DataTable dt;
-
             TabItem item = (sender as TabControl).SelectedItem as TabItem;
 
             ChangeStatusPanelContent((string)item.Tag);
@@ -43,60 +42,27 @@ namespace CSVtoDataBase
 
                     break;
 
+                case "Customers":
+
+                    DgCustomers.ItemsSource = storage[customerNameTable]?.DefaultView;
+                    
+                    break;
+
                 case "Income":
 
-                    dt = storage[incomeTable];
-                    if (dt != null)
-                    {
-                        DgIncome.ItemsSource = dt.DefaultView;
-                    }
-                    else
-                    {
-                        DgIncome.ItemsSource = null;
-                    }
+                    DgIncome.ItemsSource = storage[incomeTable]?.DefaultView;
 
                     break;
 
                 case "Expenses":
 
-                    dt = storage[expensesTable];
-
-                    if (dt != null)
-                    {
-                        DgExpenses.ItemsSource = dt.DefaultView;
-                    }
-                    else
-                    {
-                        DgExpenses.ItemsSource = null;
-                    }
-
-                    break;
-
-                case "Customers":
-
-                    if (listCustomers != null && listCustomers.Count != 0)
-                    {
-                        DgCustomers.ItemsSource = listCustomers;
-                    }
-                    else
-                    {
-                        DgCustomers.ItemsSource = null;
-                    }
+                    DgExpenses.ItemsSource = storage[expensesTable]?.DefaultView;
 
                     break;
 
                 case "Reports":
 
-                    dt = storage["report"];
-
-                    if (dt != null)
-                    {
-                        DgReport.ItemsSource = dt.DefaultView;
-                    }
-                    else
-                    {
-                        DgReport.ItemsSource = null;
-                    }
+                    DgReport.ItemsSource = storage[reportsTable]?.DefaultView;
 
                     break;
             }
@@ -162,29 +128,7 @@ namespace CSVtoDataBase
             foreach (var column in dg.Columns)
             {
                 column.MinWidth = column.ActualWidth;
-                //column.Width = new DataGridLength(1, DataGridLengthUnitType.Star);
             }
-        }
-
-        private void BtnReadingReports_Click(object sender, RoutedEventArgs e)
-        {
-            if (waterMark.WaterMarkTextBoxIsEmpty(tbFilesCSV) == true)
-            {
-                MessageForEmptyTextBox messageBox = new MessageForEmptyTextBox(tbFilesCSV);
-
-                messageBox.Show("Укажите файлы выписки");
-
-                return;
-            }
-
-            PbProgress.Value = 0;
-
-            if (ConvertDataFromCSVToReportDataTable(FileNamesCSV.ToArray()) == false)
-            {
-                return;
-            }
-
-            BtnUpdateDataBase.IsEnabled = true;
         }
     }
 }

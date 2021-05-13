@@ -1,5 +1,6 @@
 ﻿using log4net;
 using System;
+using System.ComponentModel;
 using System.Configuration;
 using System.Data;
 using System.IO;
@@ -32,7 +33,7 @@ namespace CSVtoDataBase
     /// без скрипта.
     /// 
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, INotifyPropertyChanged
     {
         /// <summary>
         /// Имя таблицы клиентов.
@@ -48,6 +49,8 @@ namespace CSVtoDataBase
         /// Имя таблицы поступлений.
         /// </summary>
         private const string incomeTable = "Income";
+
+        private const string reportsTable = "Reports";
 
         private ListCustomers listCustomers;
 
@@ -125,7 +128,7 @@ namespace CSVtoDataBase
         /// </summary>
         private void InitDataTables()
         {
-            DataTable dt = new DataTable("report");
+            DataTable dt = new DataTable(reportsTable);
 
             dt.Columns.Add(new DataColumn("CustomerId", Type.GetType("System.Int32")));
 

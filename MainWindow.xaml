@@ -7,6 +7,14 @@
         mc:Ignorable="d"
         FontFamily="Consolas"
         Title="Преобразование CSV файлов интернет банкинга БелАпб" Height="450" Width="900">
+    <Window.CommandBindings>
+        <CommandBinding Command="local:Commands.UpdateDataBase" 
+                        CanExecute="UpdateDateBase_CanExecute" 
+                        Executed="UpdateDateBase_Executed"/>
+        <CommandBinding Command="local:Commands.ReadReports" 
+                        CanExecute="ReadReports_CanExecute" 
+                        Executed="ReadReports_Executed"/>
+    </Window.CommandBindings>
 
     <Grid>
         <DockPanel LastChildFill="True">
@@ -28,13 +36,12 @@
                         <Button x:Name="BtnUpdateDataBase" DockPanel.Dock="Bottom"
                                 Content="Обновить базу данных" 
                                 Margin="10 5 10 5"
-                                IsEnabled="False"
-                                Click="BtnUpdateDataBase_Click"
+                                Command="local:Commands.UpdateDataBase"
                                 ToolTip="Обновляет базу данных данными, прочитанными из банковских выписок."/>
                         <Button x:Name="BtnReadingReports" DockPanel.Dock="Bottom"
                                 Content="Читать данные выписок" 
                                 Margin="10 5 10 5"
-                                Click="BtnReadingReports_Click"
+                                Command="local:Commands.ReadReports"
                                 ToolTip="Читает данные из банковских выписок."/>
                         <TextBox x:Name="tbFilesCSV" DockPanel.Dock="Top"
                                  TextWrapping="Wrap"
@@ -42,23 +49,25 @@
                                  Margin="10 5 10 5"
                                  ScrollViewer.VerticalScrollBarVisibility="Auto"
                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                 MouseDoubleClick="TbWm_MouseDoubleClick" 
+                                 MouseDoubleClick="TbWm_MouseDoubleClick"
+                                 TextChanged="TbFilesCSV_TextChanged"
                                  ToolTip="Двойной клик - для выбора файла на диске"/>
                     </DockPanel>
                 </TabItem>
-                <TabItem Header="Customers"  Tag="Customers">
+                <TabItem Header="Customers"  Tag="Customers" IsEnabled="{Binding ElementName=TiReports, Path=IsEnabled}">
                     <Grid>
                         <DataGrid x:Name="DgCustomers" AutoGenerateColumns="False" IsReadOnly="True">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Id" Binding="{Binding Id}"/>
                                 <DataGridTextColumn Header="УНП" Binding="{Binding UNP}"/>
-                                <DataGridTextColumn Header="Название организации" Binding="{Binding Name}"
+                                <DataGridTextColumn Header="Название организации" Binding="{Binding NameCompany}"
                                                     Width="*"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>
                 </TabItem>
-                <TabItem Header="Income" Tag="Income">
+                <TabItem Header="Income" Tag="Income" 
+                         IsEnabled="{Binding ElementName=TiExpenses, Path=IsEnabled}">
                     <DataGrid x:Name="DgIncome" IsReadOnly="True" AutoGenerateColumns="False">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Id клиента" Binding="{Binding CustomerId}"/>
@@ -68,7 +77,11 @@
                         </DataGrid.Columns>
                     </DataGrid>
                 </TabItem>
-                <TabItem Header="Expenses" Tag="Expenses">
+                <TabItem Header="Expenses" Tag="Expenses"
+                         x:Name="TiExpenses"
+                         IsEnabled="{Binding RelativeSource={RelativeSource Mode=FindAncestor,
+                                                             AncestorType={x:Type local:MainWindow}},
+                                                             Path=IsDatabaseUpdated, Mode=OneWay}">
                     <Grid>
                         <DataGrid x:Name="DgExpenses" IsReadOnly="False" AutoGenerateColumns="False">
                             <DataGrid.Columns>
@@ -79,7 +92,11 @@
                         </DataGrid>
                     </Grid>
                 </TabItem>
-                <TabItem Header="Reports" Tag="Reports">
+                <TabItem Header="Reports" Tag="Reports"
+                         x:Name="TiReports"
+                         IsEnabled="{Binding RelativeSource={RelativeSource Mode=FindAncestor, 
+                                                                            AncestorType={x:Type local:MainWindow}}, 
+                                             Path=IsReportsRead, Mode=OneWay}">
                     <Grid x:Name="GReports" >
                         <DataGrid x:Name="DgReport" AutoGenerateColumns="False" 
                                   FrozenColumnCount="1" IsReadOnly="True" Loaded="DgReport_Loaded">

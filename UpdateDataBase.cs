@@ -1,20 +1,24 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Data;
+using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Input;
 
 namespace CSVtoDataBase
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, INotifyPropertyChanged
     {
-        /// <summary>
-        /// Обработчик кнопки запуска создания sql скрипта
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void BtnUpdateDataBase_Click(object sender, RoutedEventArgs e)
-        {
-            PbProgress.Value = 0;
 
+        public void UpdateDateBase_CanExecute(object sender, CanExecuteRoutedEventArgs e)
+        {
+            DataTable dt = storage?[reportsTable];
+
+            e.CanExecute = ((IsReportsRead == true) && (IsDatabaseUpdated == false) && (dt != null && dt.Rows.Count != 0));
+        }
+
+        public void UpdateDateBase_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
             UpdateDataBase();
         }
 
@@ -68,22 +72,24 @@ namespace CSVtoDataBase
         #endregion
 
         /// <summary>
-        /// Создаёт SQL скрипт из данных банковской выписки для обновления базы данных.
+        /// Обновляет базу данных из данных банковской выписки..
         /// </summary>
         private void UpdateDataBase()
         {
-            static bool DataTableIsEmpty(DataTable dt) => (dt == null) ? true : dt.Rows.Count == 0;
+            static bool DataTableIsEmpty(DataTable dt) => (dt == null) || dt.Rows.Count == 0;
+
+            IsDatabaseUpdated = false;
 
             #region Проверка, указаны ли имена файлов и готова ли таблица данных для обновления базы данных.
 
-            DataTable report = storage["report"];
+            DataTable report = storage[reportsTable];
 
             if (DataTableIsEmpty(report))
             {
                 return;
             }
 
-            DataTable reportChanges = storage["report"].GetChanges();
+            DataTable reportChanges = storage[reportsTable].GetChanges();
 
             // Проверка на наличие изменений данных
             if (DataTableIsEmpty(reportChanges))
@@ -149,7 +155,7 @@ namespace CSVtoDataBase
                 for (int i = 0; i != reportChanges.Rows.Count; i++)
                 {
                     PbProgress.Value = numberCurrentRecord++;
-                    
+
                     DataRow currentRow = reportChanges.Rows[i];
 
                     if ((decimal)currentRow["Debit"] != 0)
@@ -211,10 +217,12 @@ namespace CSVtoDataBase
 
                 storage.AsynchronousDataBaseUpdate(incomeTable, queryIncomeFromDate);
 
+                IsDatabaseUpdated = true;
+
                 TblProgressText.Text += "\t" + $"Добавлено {numberOfEntriesAdded} записей в базу данных.";
 
-                MessageBox.Show((numberOfEntriesAdded == 0) 
-                                    ? "База данных не изменена." 
+                MessageBox.Show((numberOfEntriesAdded == 0)
+                                    ? "База данных не изменена."
                                     : "База данных обновлена.\n" + $"Добавлено {numberOfEntriesAdded} записей в базу данных.");
             }
             catch (Exception ex)
@@ -222,6 +230,8 @@ namespace CSVtoDataBase
                 TblProgressText.Text += "Не удалось обновить базу данных.";
 
                 MessageAndLogException("Не удалось обновить базу данных.", ex);
+
+                IsDatabaseUpdated = false;
             }
         }
 

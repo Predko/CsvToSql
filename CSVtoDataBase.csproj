@@ -12,4 +12,10 @@
     <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="Commands.cs">
+      <CustomToolNamespace>CSVtoDataBase</CustomToolNamespace>
+    </Compile>
+  </ItemGroup>
+
 </Project>

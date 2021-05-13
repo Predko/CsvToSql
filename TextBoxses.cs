@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Text;
 using System.Windows;
@@ -9,7 +10,7 @@ using System.Windows.Media;
 
 namespace CSVtoDataBase
 {
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, INotifyPropertyChanged
     {
         /// <summary>
         /// Переменная, хранящая объект, управляющий водяными знаками текстовых полей.
@@ -21,11 +22,6 @@ namespace CSVtoDataBase
 
         private const string emptyDataBaseName = "Введите имя базы данных...";
         #endregion
-
-        /// <summary>
-        /// Список имён файлов выписок. Выбирается пользователем.
-        /// </summary>
-        private readonly List<string> FileNamesCSV = new List<string>();
 
         private void InitializeTextBoxWaterMark()
         {
@@ -115,6 +111,11 @@ namespace CSVtoDataBase
             }
 
             return null;
+        }
+
+        private void TbFilesCSV_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            IsReportsRead = false;
         }
     }
 }

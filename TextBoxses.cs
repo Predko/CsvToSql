@@ -10,7 +10,7 @@ using System.Windows.Media;
 
 namespace CSVtoDataBase
 {
-    public partial class MainWindow : Window, INotifyPropertyChanged
+    public partial class MainWindow : Window
     {
         /// <summary>
         /// Переменная, хранящая объект, управляющий водяными знаками текстовых полей.
@@ -27,7 +27,7 @@ namespace CSVtoDataBase
         {
             waterMark = new WaterMarkForTextBox();
 
-            waterMark.AddWaterMark(tbFilesCSV, emptyReportsFileName, Brushes.Gray, FileNamesCSV);
+            //waterMark.AddWaterMark(tbFilesCSV, emptyReportsFileName, Brushes.Gray, FileNamesCSV);
         }
 
         #region События для обработки водяного знака
@@ -100,7 +100,7 @@ namespace CSVtoDataBase
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
             {
-                Filter = "All files CSV|*.csv|*.*|*.*|TXT|*.txt|XML|*.xml",
+                Filter = "CSV|*.csv|All files *.*|*.*|TXT|*.txt|XML|*.xml",
                 InitialDirectory = Directory.GetCurrentDirectory(),
                 Multiselect = multiselect
             };
@@ -111,11 +111,6 @@ namespace CSVtoDataBase
             }
 
             return null;
-        }
-
-        private void TbFilesCSV_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            IsReportsRead = false;
         }
     }
 }

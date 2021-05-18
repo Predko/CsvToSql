@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace CSVtoDataBase
 {
-    class StorageDataBase
+    public class StorageDataBase
     {
         private readonly DataSet dataSet;
 
@@ -65,9 +65,9 @@ namespace CSVtoDataBase
         /// </summary>
         /// <param name="nameTable">Имя таблицы данных.</param>
         /// <param name="queryString">Строка запроса для загрузки базы данных или её части.</param>
-        public void AsynchronousDataBaseUpdate(string nameTable, string queryString = null)
+        public int AsynchronousDataBaseUpdate(string nameTable, string queryString = null)
         {
-            Task updateTask = new Task(() =>
+            Task<int> updateTask = new Task<int>(() =>
                         {
                             if (queryString == null)
                             {
@@ -81,10 +81,12 @@ namespace CSVtoDataBase
                             SqlCommandBuilder commandBuilder = new SqlCommandBuilder(dataAdapter);
 
                             string s = commandBuilder.GetInsertCommand().CommandText;
-                            dataAdapter.Update(dataSet.Tables[nameTable]);
+                            return dataAdapter.Update(dataSet.Tables[nameTable]);
                         });
 
             updateTask.Start();
+
+            return updateTask.Result;
         }
 
         /// <summary>
@@ -118,5 +120,7 @@ namespace CSVtoDataBase
 
             dataAdapter.Fill(dataSet.Tables[nameTable]);
         }
+
+        public void AcceptChanges(string nameTable) => this[nameTable].AcceptChanges();
     }
 }

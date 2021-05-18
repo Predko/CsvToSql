@@ -1,5 +1,6 @@
 ﻿using log4net;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
 using System.Data;
@@ -33,30 +34,9 @@ namespace CSVtoDataBase
     /// без скрипта.
     /// 
     /// </summary>
-    public partial class MainWindow : Window, INotifyPropertyChanged
+    public partial class MainWindow : Window
     {
-        /// <summary>
-        /// Имя таблицы клиентов.
-        /// </summary>
-        private const string customerNameTable = "Customers";
-
-        /// <summary>
-        /// Имя таблицы выплат.
-        /// </summary>
-        private const string expensesTable = "Expenses";
-
-        /// <summary>
-        /// Имя таблицы поступлений.
-        /// </summary>
-        private const string incomeTable = "Income";
-
-        private const string reportsTable = "Reports";
-
-        private ListCustomers listCustomers;
-
-        private StorageDataBase storage;
-
-        private static readonly ILog log = LogManager.GetLogger(typeof(MainWindow));
+        public static readonly ILog Log = LogManager.GetLogger(typeof(MainWindow));
 
         public MainWindow()
         {
@@ -64,97 +44,7 @@ namespace CSVtoDataBase
 
             InitializeTextBoxWaterMark();
 
-            InitProgramFromArguments();
-
-            InitStorage();
-
-            InitDataTables();
-
-            DataContext = this;
-        }
-
-        /// <summary>
-        /// Инициализация хранилища данных.
-        /// </summary>
-        private void InitStorage()
-        {
-            // Читаем строку подключения к базе данных Customers из файла конфигурации
-            string connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
-
-            storage = new StorageDataBase(connectionString);
-
-        }
-
-        /// <summary>
-        /// Читает аргументы из командной строки 
-        /// и инициализирует список файлов выписки,
-        /// если файлы указаны.
-        /// </summary>
-        /// <returns></returns>
-        private void InitProgramFromArguments()
-        {
-            if (App.Args.Length == 0 || App.Args[0].Trim().Length == 0)
-            {
-                return;
-            }
-
-            string firstArgument = App.Args[0].Trim();
-
-            string s = firstArgument.ToLower().Trim('\\', '/', '-');
-
-            if (s[0] == '?' || s == "help" || s == "h")
-            {
-                MessageBox.Show("Использование:\nCSVtoSQL.exe [Имя файла выписки.csv] [Имя файла выписки.csv] [Имя файла выписки.csv]...\n" +
-                    "Где: [Имя файла выписки.csv] - имя файла банковской выписки.\n" +
-                    "Может быть указано несколько файлов.\n" +
-                    "Если имя файла содержит пробелы, его надо заключить в ковычки \"Имя файла с пробелами.csv\"\n" +
-                    "Если аргументы не указаны, файлы можно выбрать в программе.");
-
-                return;
-            }
-
-            // Заполняем список файлов выписки из аргументов коммандной строки.
-            foreach (string fileName in App.Args)
-            {
-                if (File.Exists(fileName) == true)
-                {
-                    FileNamesCSV.Add(fileName);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Инициализация таблиц для хранения данных.
-        /// </summary>
-        private void InitDataTables()
-        {
-            DataTable dt = new DataTable(reportsTable);
-
-            dt.Columns.Add(new DataColumn("CustomerId", Type.GetType("System.Int32")));
-
-            dt.Columns.Add(new DataColumn("BankCode", Type.GetType("System.String")));
-
-            dt.Columns.Add(new DataColumn("CorrAccount", Type.GetType("System.String")));
-
-            dt.Columns.Add(new DataColumn("Number", Type.GetType("System.Int32")));
-
-            dt.Columns.Add(new DataColumn("Debit", Type.GetType("System.Decimal")));
-
-            dt.Columns.Add(new DataColumn("Credit", Type.GetType("System.Decimal")));
-
-            dt.Columns.Add(new DataColumn("Equivalent", Type.GetType("System.Decimal")));
-
-            dt.Columns.Add(new DataColumn("Date", Type.GetType("System.DateTime")));
-
-            dt.Columns.Add(new DataColumn("Purpose", Type.GetType("System.String")));
-
-            dt.Columns.Add(new DataColumn("NameCompany", Type.GetType("System.String")));
-
-            dt.Columns.Add(new DataColumn("UNP", Type.GetType("System.String")));
-
-            storage.Add(dt);
-
-            DgReport.ItemsSource = dt.DefaultView;
+            DataContext = new ListOfChangesViewModel();
         }
     }
 }

@@ -8,7 +8,7 @@ using System.Windows.Controls;
 
 namespace CSVtoDataBase
 {
-    public partial class MainWindow : Window, INotifyPropertyChanged
+    public partial class MainWindow : Window
     {
         /// <summary>
         /// Saves the state of the status bar
@@ -44,25 +44,17 @@ namespace CSVtoDataBase
 
                 case "Customers":
 
-                    DgCustomers.ItemsSource = storage[customerNameTable]?.DefaultView;
-                    
                     break;
 
                 case "Income":
-
-                    DgIncome.ItemsSource = storage[incomeTable]?.DefaultView;
 
                     break;
 
                 case "Expenses":
 
-                    DgExpenses.ItemsSource = storage[expensesTable]?.DefaultView;
-
                     break;
 
                 case "Reports":
-
-                    DgReport.ItemsSource = storage[reportsTable]?.DefaultView;
 
                     break;
             }
@@ -76,9 +68,9 @@ namespace CSVtoDataBase
         {
             BackupProgressBar bpb = new BackupProgressBar()
             {
-                progressBarValue = PbProgress.Value,
+                //progressBarValue = PbProgress.Value,
 
-                progressText = TblProgressText.Text
+                //progressText = TblProgressText.Text
             };
 
             if (currentKey != null)
@@ -95,15 +87,15 @@ namespace CSVtoDataBase
 
             if (buckupProgressBar.ContainsKey(key))
             {
-                PbProgress.Value = buckupProgressBar[key].progressBarValue;
+                //PbProgress.Value = buckupProgressBar[key].progressBarValue;
 
-                TblProgressText.Text = buckupProgressBar[key].progressText;
+                //TblProgressText.Text = buckupProgressBar[key].progressText;
             }
             else
             {
-                PbProgress.Value = PbProgress.Minimum;
+                //PbProgress.Value = PbProgress.Minimum;
 
-                TblProgressText.Text = "";
+                //TblProgressText.Text = "";
             }
 
             currentKey = key;

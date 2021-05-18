@@ -10,39 +10,12 @@ using System.Windows.Input;
 
 namespace CSVtoDataBase
 {
-    public partial class MainWindow : Window, INotifyPropertyChanged
+    public partial class ListOfChangesViewModel : INotifyPropertyChanged
     {
         /// <summary>
         /// Список имён файлов выписок. Выбирается пользователем.
         /// </summary>
-        private readonly List<string> FileNamesCSV = new List<string>();
-
-        #region Команда ReportsRead
-
-        public void ReadReports_Executed(object sender, ExecutedRoutedEventArgs e)
-        {
-            if (waterMark.WaterMarkTextBoxIsEmpty(tbFilesCSV) == true)
-            {
-                MessageForEmptyTextBox messageBox = new MessageForEmptyTextBox(tbFilesCSV);
-
-                messageBox.Show("Укажите файлы выписки");
-
-                return;
-            }
-
-            if (ConvertDataFromCSVToReportDataTable(FileNamesCSV) == true)
-            {
-                IsDatabaseUpdated = false;
-
-                IsReportsRead = true;
-            }
-        }
-
-        public void ReadReports_CanExecute(object sender, CanExecuteRoutedEventArgs e)
-        {
-            e.CanExecute = (FileNamesCSV.Count != 0);
-        }
-        #endregion
+        private string[] FileNamesCSV;
 
         /// <summary>
         /// Читает текстовые данные из файлов банковской выписки
@@ -62,7 +35,7 @@ namespace CSVtoDataBase
         /// </summary>
         /// <param name="filesIn">Массив строк с именами файлов</param>
         /// <returns>True - если чтение выписок успешно, иначе - false.</returns>
-        private bool ConvertDataFromCSVToReportDataTable(List<string> filesIn)
+        private bool ConvertDataFromCSVToReportDataTable(string[] filesIn)
         {
             const int BankCode = 0;    // Код банка
             const int Account = 1;     // Счет-корреспондент
@@ -82,9 +55,9 @@ namespace CSVtoDataBase
 
             try
             {
-                storage.LoadDataTable(customerNameTable);
+                storage.LoadDataTable(CustomersTable);
 
-                listCustomers = new ListCustomers(storage[customerNameTable]);
+                listCustomers = new ListCustomers(storage[CustomersTable]);
 
                 if (listCustomers.Count == 0)
                 {
@@ -102,18 +75,19 @@ namespace CSVtoDataBase
                 decimal debit = 0, credit = 0;
 
                 int totalRecords = 0;
-                
-                PbProgress.Maximum = filesIn.Count;
+
+                ProgressMaximum = filesIn.Length;
+                ProgressValue = 0;
 
                 int numberOfFile = 0;
-                
+
                 foreach (var file in filesIn)
                 {
                     currentFile = file;
 
-                    TblProgressText.Text = $"Converting file: {file}";
+                    ProgressText = $"Converting file: {file}";
 
-                    PbProgress.Value = numberOfFile++;
+                    ProgressValue = numberOfFile++;
 
                     using StreamReader sr = new StreamReader(file, encoding: srcEncoding);
 
@@ -123,7 +97,7 @@ namespace CSVtoDataBase
 
                     if (line == null)
                     {
-                        TblProgressText.Text = $"Convertation {file} failed.";
+                        ProgressText = $"Convertation {file} failed.";
 
                         continue;
                     }
@@ -147,7 +121,7 @@ namespace CSVtoDataBase
                             Customer customer = ListCustomers.NotFound;
 
                             string sUNP = s[UNP];
-                            
+
                             // Пробуем найти УНП в назначении платежа.
                             string UNPstring = "УНП";
 
@@ -158,7 +132,7 @@ namespace CSVtoDataBase
                             if (indexUNP != -1)
                             {
                                 indexUNP = s[Purpose].IndexOfAny("0123456789".ToCharArray(), indexUNP);
-                                
+
                                 sUNP = s[Purpose].Substring(indexUNP, 9);
 
                                 // Проверяем, является ли строка УНП.
@@ -195,7 +169,7 @@ namespace CSVtoDataBase
 
                                 customer = choosingCustomerName.SelectedCustomer;
 
-                                if (choosingCustomerName.NeedChangeUNP() == true 
+                                if (choosingCustomerName.NeedChangeUNP() == true
                                     && (customer.UNP.Length == 0 || UnpFromPurpose == true))
                                 {
                                     customer.UNP = sUNP;
@@ -215,7 +189,7 @@ namespace CSVtoDataBase
 
                         dtReports.Rows.Add(dr);
 
-                        TblProgressText.Text += $".";
+                        ProgressText += $".";
 
                         numberRows++;
 
@@ -224,17 +198,17 @@ namespace CSVtoDataBase
                         credit += d2;
                     }
 
-                    TblProgressText.Text = $"Done. {numberRows} records.";
+                    ProgressText = $"Done. {numberRows} records.";
 
                     totalRecords += numberRows;
                 }
 
                 // Обновляем базу данных клиентов.
-                storage.DataBaseUpdate(customerNameTable);
+                storage.DataBaseUpdate(CustomersTable);
 
-                TblProgressText.Text = $"Всего {totalRecords} записей. Расход = {debit}, Приход = {credit}";
+                ProgressText = $"Всего {totalRecords} записей. Расход = {debit}, Приход = {credit}";
 
-                PbProgress.Value = numberOfFile;
+                ProgressValue = numberOfFile;
             }
             catch (Exception ex)
             {
@@ -255,7 +229,7 @@ namespace CSVtoDataBase
         {
             MessageBox.Show(msg);
 
-            log.Warn(msg + "\n" + ex.ToString());
+            MainWindow.Log.Warn(msg + "\n" + ex.ToString());
         }
     }
 }

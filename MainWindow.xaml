@@ -3,123 +3,82 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:diag="clr-namespace:System.Diagnostics;assembly=WindowsBase"
         xmlns:local="clr-namespace:CSVtoDataBase"
         mc:Ignorable="d"
         FontFamily="Consolas"
         Title="Преобразование CSV файлов интернет банкинга БелАпб" Height="450" Width="900">
-    <Window.CommandBindings>
-        <CommandBinding Command="local:Commands.UpdateDataBase" 
-                        CanExecute="UpdateDateBase_CanExecute" 
-                        Executed="UpdateDateBase_Executed"/>
-        <CommandBinding Command="local:Commands.ReadReports" 
-                        CanExecute="ReadReports_CanExecute" 
-                        Executed="ReadReports_Executed"/>
-    </Window.CommandBindings>
 
     <Grid>
         <DockPanel LastChildFill="True">
             <StatusBar  DockPanel.Dock="Bottom" Height="20">
                 <DockPanel LastChildFill="True">
-                    <ProgressBar x:Name="PbProgress" DockPanel.Dock="Left"
-                                 Minimum="0" Maximum="4" Value="0"
+                    <ProgressBar Minimum="0" Maximum="{Binding ProgressMaximum}" 
+                                 Value="{Binding ProgressValue}"
                                  Margin="10 0 5 0"
                                  MinWidth="100"
                                  MinHeight="15"/>
-                    <TextBlock x:Name="TblProgressText" 
+                    <TextBlock Text="{Binding ProgressText}"
                                Margin="20 0 10 0"/>
                 </DockPanel>
             </StatusBar>
-            <TabControl SelectionChanged="TabControl_SelectionChanged">
+            <TabControl >
                 <TabItem Header="Чтение выписки" Tag="ReportReading">
                     <DockPanel LastChildFill="True">
-                        <TextBlock Text="Файлы выписок:" DockPanel.Dock="Top" Margin="10 5 10 5"/>
-                        <Button x:Name="BtnUpdateDataBase" DockPanel.Dock="Bottom"
+                        <TextBlock Text="Изменения в базе данных по данным выписок:" DockPanel.Dock="Top" Margin="10 5 10 5"/>
+                        <Button DockPanel.Dock="Bottom"
                                 Content="Обновить базу данных" 
                                 Margin="10 5 10 5"
-                                Command="local:Commands.UpdateDataBase"
+                                Command="{Binding UpdateDataBase}"
                                 ToolTip="Обновляет базу данных данными, прочитанными из банковских выписок."/>
-                        <Button x:Name="BtnReadingReports" DockPanel.Dock="Bottom"
+                        <Button DockPanel.Dock="Bottom"
                                 Content="Читать данные выписок" 
                                 Margin="10 5 10 5"
-                                Command="local:Commands.ReadReports"
+                                Command="{Binding ReadReports}"
                                 ToolTip="Читает данные из банковских выписок."/>
-                        <TextBox x:Name="tbFilesCSV" DockPanel.Dock="Top"
-                                 TextWrapping="Wrap"
-                                 MinWidth="400"
-                                 Margin="10 5 10 5"
-                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                                 MouseDoubleClick="TbWm_MouseDoubleClick"
-                                 TextChanged="TbFilesCSV_TextChanged"
-                                 ToolTip="Двойной клик - для выбора файла на диске"/>
-                    </DockPanel>
-                </TabItem>
-                <TabItem Header="Customers"  Tag="Customers" IsEnabled="{Binding ElementName=TiReports, Path=IsEnabled}">
-                    <Grid>
-                        <DataGrid x:Name="DgCustomers" AutoGenerateColumns="False" IsReadOnly="True">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Id" Binding="{Binding Id}"/>
-                                <DataGridTextColumn Header="УНП" Binding="{Binding UNP}"/>
-                                <DataGridTextColumn Header="Название организации" Binding="{Binding NameCompany}"
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel >
+                                <Expander Margin="10 5 10 5" Header="Список изменений в Customers"
+                                          IsEnabled="{Binding IsReportsRead}">
+                                    <DataGrid AutoGenerateColumns="False" 
+                                              IsReadOnly="True"
+                                              ItemsSource="{Binding ChangesInCustomers}">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Id" Binding="{Binding Id}"/>
+                                            <DataGridTextColumn Header="УНП" Binding="{Binding UNP}"/>
+                                            <DataGridTextColumn Header="Название организации" Binding="{Binding NameCompany}"
                                                     Width="*"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </Grid>
-                </TabItem>
-                <TabItem Header="Income" Tag="Income" 
-                         IsEnabled="{Binding ElementName=TiExpenses, Path=IsEnabled}">
-                    <DataGrid x:Name="DgIncome" IsReadOnly="True" AutoGenerateColumns="False">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Id клиента" Binding="{Binding CustomerId}"/>
-                            <DataGridTextColumn Header="Дата" Binding="{Binding Date, StringFormat={}{0:dd.MM.yy}}"/>
-                            <DataGridTextColumn Header="Номер ПП" Binding="{Binding Number}"/>
-                            <DataGridTextColumn Header="Сумма" Binding="{Binding Value}"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </TabItem>
-                <TabItem Header="Expenses" Tag="Expenses"
-                         x:Name="TiExpenses"
-                         IsEnabled="{Binding RelativeSource={RelativeSource Mode=FindAncestor,
-                                                             AncestorType={x:Type local:MainWindow}},
-                                                             Path=IsDatabaseUpdated, Mode=OneWay}">
-                    <Grid>
-                        <DataGrid x:Name="DgExpenses" IsReadOnly="False" AutoGenerateColumns="False">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Дата" Binding="{Binding Date, StringFormat={}{0:dd.MM.yy}}"/>
-                                <DataGridTextColumn Header="Номер ПП" Binding="{Binding Number}"/>
-                                <DataGridTextColumn Header="Сумма" Binding="{Binding Value}"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </Grid>
-                </TabItem>
-                <TabItem Header="Reports" Tag="Reports"
-                         x:Name="TiReports"
-                         IsEnabled="{Binding RelativeSource={RelativeSource Mode=FindAncestor, 
-                                                                            AncestorType={x:Type local:MainWindow}}, 
-                                             Path=IsReportsRead, Mode=OneWay}">
-                    <Grid x:Name="GReports" >
-                        <DataGrid x:Name="DgReport" AutoGenerateColumns="False" 
-                                  FrozenColumnCount="1" IsReadOnly="True" Loaded="DgReport_Loaded">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn x:Name="DgtcNameCompany" Header="Название организации" 
-                                                    Binding="{Binding NameCompany}"/>
-                                <DataGridTextColumn Header="Дата" Binding="{Binding Date, StringFormat={}{0:dd.MM.yy}}"/>
-                                <DataGridTextColumn Header="Номер ПП" Binding="{Binding Number}"/>
-                                <DataGridTextColumn Header="Приход" Binding="{Binding Credit}"/>
-                                <DataGridTextColumn Header="Расход" Binding="{Binding Debit}"/>
-                                <DataGridTextColumn Header="УНП" Binding="{Binding UNP}"/>
-                                <DataGridTextColumn Header="Код банка" Binding="{Binding BankCode}"/>
-                                <DataGridTextColumn Header="Расчётный счёт" Binding="{Binding CorrAccount}"/>
-                            </DataGrid.Columns>
-                            <DataGrid.RowDetailsTemplate >
-                                <DataTemplate>
-                                    <TextBlock x:Name="TblDetailColumn"
-                                               Text="{Binding Purpose}" Background="LightYellow" 
-                                               TextWrapping="Wrap"/>
-                                </DataTemplate>
-                            </DataGrid.RowDetailsTemplate>
-                        </DataGrid>
-                    </Grid>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Expander>
+                                <Expander x:Name="ExpExpenses" Margin="10 5 10 5" Header="Список изменений в Expenses"
+                                          IsEnabled="{Binding IsDatabaseReadyToUpdated}">
+                                    <DataGrid IsReadOnly="True" 
+                                              AutoGenerateColumns="False"
+                                              ItemsSource="{Binding ChangesInExpenses}">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Дата" Binding="{Binding Date, StringFormat={}{0:dd.MM.yy}}"/>
+                                            <DataGridTextColumn Header="Номер ПП" Binding="{Binding Number}"/>
+                                            <DataGridTextColumn Header="Сумма" Binding="{Binding Value}"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Expander>
+                                <Expander Margin="10 5 10 5" Header="Список изменений в Income"
+                                          IsEnabled="{Binding ElementName=ExpExpenses, Path=IsEnabled}">
+                                    <DataGrid IsReadOnly="True" 
+                                              AutoGenerateColumns="False"
+                                              ItemsSource="{Binding ChangesInIncome}">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="Id клиента" Binding="{Binding CustomerId}"/>
+                                            <DataGridTextColumn Header="Дата" Binding="{Binding Date, StringFormat={}{0:dd.MM.yy}}"/>
+                                            <DataGridTextColumn Header="Номер ПП" Binding="{Binding Number}"/>
+                                            <DataGridTextColumn Header="Сумма" Binding="{Binding Value}"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                </Expander>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </DockPanel>
                 </TabItem>
             </TabControl>
         </DockPanel>

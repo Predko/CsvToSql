@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace CSVtoDataBase
 {
-    public class StorageDataBase
+    public class StorageDatabase : IStorageDatabase
     {
         private readonly DataSet dataSet;
 
@@ -15,7 +15,7 @@ namespace CSVtoDataBase
         /// </summary>
         public string ConnectionString { get => connectionString; set => connectionString = value; }
 
-        public StorageDataBase(string connectionString)
+        public StorageDatabase(string connectionString)
         {
             ConnectionString = connectionString;
 

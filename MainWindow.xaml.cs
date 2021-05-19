@@ -44,7 +44,12 @@ namespace CSVtoDataBase
 
             InitializeTextBoxWaterMark();
 
-            DataContext = new ListOfChangesViewModel();
+            // Читаем строку подключения к базе данных Customers из файла конфигурации
+            string connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
+
+            var storage = new StorageDatabase(connectionString);
+
+            DataContext = new ListOfChangesViewModel(storage);
         }
     }
 }

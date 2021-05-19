@@ -32,7 +32,7 @@ namespace CSVtoDataBase
 
         private ListCustomers listCustomers;
 
-        private StorageDataBase storage;
+        private readonly IStorageDatabase storage;
 
         private int progressMaximum;
         private string progressText;
@@ -146,26 +146,14 @@ namespace CSVtoDataBase
         }
 
 
-        public ListOfChangesViewModel()
+        public ListOfChangesViewModel(IStorageDatabase storageDatabase)
         {
-            InitStorage();
-
+            storage = storageDatabase;
+            
             InitDataTables();
 
             ProgressValue = 0;
             ProgressMaximum = 1;
-        }
-
-        /// <summary>
-        /// Инициализация хранилища данных.
-        /// </summary>
-        private void InitStorage()
-        {
-            // Читаем строку подключения к базе данных Customers из файла конфигурации
-            string connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
-
-            storage = new StorageDataBase(connectionString);
-
         }
 
         /// <summary>

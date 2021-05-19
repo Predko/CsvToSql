@@ -7,14 +7,19 @@ namespace CSVtoDataBase
 {
     public class StorageDatabase : IStorageDatabase
     {
+        /// <summary>
+        /// Таблицы данных.
+        /// </summary>
         private readonly DataSet dataSet;
 
         private string connectionString;
-        /// <summary>
-        /// Строка подключения.
-        /// </summary>
+        
         public string ConnectionString { get => connectionString; set => connectionString = value; }
 
+        /// <summary>
+        /// Конструктор хранилиша данных.
+        /// </summary>
+        /// <param name="connectionString">Строка подключения к базе данных.</param>
         public StorageDatabase(string connectionString)
         {
             ConnectionString = connectionString;
@@ -24,11 +29,6 @@ namespace CSVtoDataBase
 
         public void Add(DataTable dt) => dataSet.Tables.Add(dt);
 
-        /// <summary>
-        /// Возвращает таблицу с именем name.
-        /// </summary>
-        /// <param name="name">Имя таблицы.</param>
-        /// <returns>Таблица DataTable.</returns>
         public DataTable this[string name]
         {
             get
@@ -36,12 +36,7 @@ namespace CSVtoDataBase
                 return dataSet.Tables[name];
             }
         }
-
-        /// <summary>
-        /// Обновляет базу данных из соответствующей таблицы данных.
-        /// </summary>
-        /// <param name="nameTable">Имя таблицы данных.</param>
-        /// <param name="queryString">Строка запроса для загрузки базы данных или её части.</param>
+        
         public void DataBaseUpdate(string nameTable, string queryString = null)
         {
             if (queryString == null)
@@ -60,11 +55,6 @@ namespace CSVtoDataBase
             dataAdapter.Update(dataSet.Tables[nameTable]);
         }
 
-        /// <summary>
-        /// Асинхронно обновляет базу данных из соответствующей таблицы данных.
-        /// </summary>
-        /// <param name="nameTable">Имя таблицы данных.</param>
-        /// <param name="queryString">Строка запроса для загрузки базы данных или её части.</param>
         public int AsynchronousDataBaseUpdate(string nameTable, string queryString = null)
         {
             Task<int> updateTask = new Task<int>(() =>
@@ -89,13 +79,6 @@ namespace CSVtoDataBase
             return updateTask.Result;
         }
 
-        /// <summary>
-        /// Загружает указанную таблицу из базы данных.
-        /// </summary>
-        /// <param name="nameTable">Имя таблицы.</param>
-        /// <param name="queryString">Строка sql запроса данных таблицы. 
-        /// Если null - будет загружена вся таблица.
-        /// </param>
         public void LoadDataTable(string nameTable, string queryString = null)
         {
             string newQueryString = queryString;

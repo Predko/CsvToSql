@@ -55,9 +55,9 @@ namespace CSVtoDataBase
 
             try
             {
-                storage.LoadDataTable(CustomersTable);
+                storage.LoadDataTable(customersTable);
 
-                listCustomers = new ListCustomers(storage[CustomersTable]);
+                listCustomers = new ListCustomers(storage[customersTable]);
 
                 if (listCustomers.Count == 0)
                 {
@@ -85,7 +85,7 @@ namespace CSVtoDataBase
                 {
                     currentFile = file;
 
-                    ProgressText = $"Converting file: {file}";
+                    StatusText = $"Converting file: {file}";
 
                     ProgressValue = numberOfFile++;
 
@@ -97,7 +97,7 @@ namespace CSVtoDataBase
 
                     if (line == null)
                     {
-                        ProgressText = $"Convertation {file} failed.";
+                        StatusText = $"Convertation {file} failed.";
 
                         continue;
                     }
@@ -189,7 +189,7 @@ namespace CSVtoDataBase
 
                         dtReports.Rows.Add(dr);
 
-                        ProgressText += $".";
+                        StatusText += $".";
 
                         numberRows++;
 
@@ -198,15 +198,15 @@ namespace CSVtoDataBase
                         credit += d2;
                     }
 
-                    ProgressText = $"Done. {numberRows} records.";
+                    StatusText = $"Done. {numberRows} records.";
 
                     totalRecords += numberRows;
                 }
 
                 // Обновляем базу данных клиентов.
-                storage.DataBaseUpdate(CustomersTable);
+                storage.DataBaseUpdate(customersTable);
 
-                ProgressText = $"Всего {totalRecords} записей. Расход = {debit}, Приход = {credit}";
+                StatusText = $"Всего {totalRecords} записей. Расход = {debit}, Приход = {credit}";
 
                 ProgressValue = numberOfFile;
             }

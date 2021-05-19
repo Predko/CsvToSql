@@ -59,7 +59,7 @@ namespace CSVtoDataBase
         #endregion
 
         /// <summary>
-        /// Обновляет базу данных из данных банковской выписки..
+        /// Подготавливает данные для обновления таблиц базы данных.
         /// </summary>
         private bool PrepareToUpdateDatabase()
         {
@@ -100,35 +100,35 @@ namespace CSVtoDataBase
                 DateTime beginDateExpenses = (DateTime)reportChanges.Rows[0]["Date"];
                 DateTime beginDateIncome = beginDateExpenses;
 
-                storage.LoadDataTable(IncomeTable, $"SELECT TOP 1 * FROM [{IncomeTable}] ORDER BY [Date] DESC");
+                storage.LoadDataTable(incomeTable, $"SELECT TOP 1 * FROM [{incomeTable}] ORDER BY [Date] DESC");
 
-                storage.LoadDataTable(ExpensesTable, $"SELECT TOP 1 * FROM [{ExpensesTable}] ORDER BY [Date] DESC");
+                storage.LoadDataTable(expensesTable, $"SELECT TOP 1 * FROM [{expensesTable}] ORDER BY [Date] DESC");
 
-                if (storage[IncomeTable].Rows.Count != 0)
+                if (storage[incomeTable].Rows.Count != 0)
                 {
-                    beginDateIncome = (DateTime)storage[IncomeTable].Rows[0]["Date"];
+                    beginDateIncome = (DateTime)storage[incomeTable].Rows[0]["Date"];
                 }
 
-                if (storage[ExpensesTable].Rows.Count != 0)
+                if (storage[expensesTable].Rows.Count != 0)
                 {
-                    beginDateExpenses = (DateTime)storage[ExpensesTable].Rows[0]["Date"];
+                    beginDateExpenses = (DateTime)storage[expensesTable].Rows[0]["Date"];
                 }
 
                 #endregion
 
                 // Строки запроса для загрузки и обновления базы данных.
-                string queryExpensesFromDate = $"SELECT * FROM [{ExpensesTable}] WHERE [Date] >= '{beginDateExpenses}' ORDER BY [Date] DESC";
-                string queryIncomeFromDate = $"SELECT * FROM [{IncomeTable}] WHERE [Date] >= '{beginDateIncome}' ORDER BY [Date] DESC";
+                string queryExpensesFromDate = $"SELECT * FROM [{expensesTable}] WHERE [Date] >= '{beginDateExpenses}' ORDER BY [Date] DESC";
+                string queryIncomeFromDate = $"SELECT * FROM [{incomeTable}] WHERE [Date] >= '{beginDateIncome}' ORDER BY [Date] DESC";
 
                 #region Загружаем данные из таблиц начиная с соответствующих начальных дат.
 
-                storage.LoadDataTable(ExpensesTable, queryExpensesFromDate);
+                storage.LoadDataTable(expensesTable, queryExpensesFromDate);
 
-                storage.LoadDataTable(IncomeTable, queryIncomeFromDate);
+                storage.LoadDataTable(incomeTable, queryIncomeFromDate);
 
-                storage.AcceptChanges(ExpensesTable);
+                storage.AcceptChanges(expensesTable);
 
-                storage.AcceptChanges(IncomeTable);
+                storage.AcceptChanges(incomeTable);
                 #endregion
 
                 #region Запись данных выписки в таблицы с проверкой на повтор.
@@ -155,7 +155,7 @@ namespace CSVtoDataBase
                         }
 
                         // Проверяем, нет ли такой записи в базе данных.
-                        if (IsContainsOperation(ExpensesTable,
+                        if (IsContainsOperation(expensesTable,
                                                 IgnoreId,
                                                 (int)currentRow["Number"],
                                                 (DateTime)currentRow["Date"]) == true)
@@ -163,13 +163,13 @@ namespace CSVtoDataBase
                             continue;
                         }
 
-                        DataRow newRow = storage[ExpensesTable].NewRow();
+                        DataRow newRow = storage[expensesTable].NewRow();
 
                         // [Id], [Date],    [Value],      [Number], [Comment]
                         // int,   Date,   decimal(15.2),   int,     nvarchar[10]
                         newRow.ItemArray = new object[] { null, currentRow["Date"], currentRow["Debit"], currentRow["Number"], null };
 
-                        storage[ExpensesTable].Rows.Add(newRow);
+                        storage[expensesTable].Rows.Add(newRow);
                     }
                     else
                     if ((decimal)currentRow["Credit"] != 0)
@@ -180,7 +180,7 @@ namespace CSVtoDataBase
                         }
 
                         // Проверяем, нет ли такой записи в базе данных.
-                        if (IsContainsOperation(IncomeTable,
+                        if (IsContainsOperation(incomeTable,
                                                 (int)currentRow["CustomerId"],
                                                 (int)currentRow["Number"],
                                                 (DateTime)currentRow["Date"]) == true)
@@ -188,13 +188,13 @@ namespace CSVtoDataBase
                             continue;
                         }
 
-                        DataRow newRow = storage[IncomeTable].NewRow();
+                        DataRow newRow = storage[incomeTable].NewRow();
 
                         // [Id], [CustomerId],    [Value],    [Date], [Number], [TypePayment]
                         // int,    int,     decimal(15.2),  Date,    int,       bit
                         newRow.ItemArray = new object[] { null, currentRow["CustomerId"], currentRow["Credit"], currentRow["Date"], currentRow["Number"], true };
 
-                        storage[IncomeTable].Rows.Add(newRow);
+                        storage[incomeTable].Rows.Add(newRow);
                     }
 
                     numberOfEntriesAdded++;
@@ -203,7 +203,7 @@ namespace CSVtoDataBase
             }
             catch (Exception ex)
             {
-                ProgressText += "Не удалось обновить таблицы данных.";
+                StatusText += "Не удалось обновить таблицы данных.";
 
                 MessageAndLogException("Не удалось обновить таблицы данных.", ex);
 
@@ -213,34 +213,38 @@ namespace CSVtoDataBase
             return true;
         }
 
+        /// <summary>
+        /// Обновляет базу данных из подготовленных данных.
+        /// </summary>
+        /// <returns></returns>
         private bool UpdateDatabase()
         {
-            DateTime beginDateExpenses = (DateTime)storage[ExpensesTable].Rows[0]["Date"];
-            DateTime beginDateIncome = (DateTime)storage[IncomeTable].Rows[0]["Date"];
+            DateTime beginDateExpenses = (DateTime)storage[expensesTable].Rows[0]["Date"];
+            DateTime beginDateIncome = (DateTime)storage[incomeTable].Rows[0]["Date"];
 
             // Строки запроса для загрузки и обновления базы данных.
-            string queryExpensesFromDate = $"SELECT * FROM [{ExpensesTable}] WHERE [Date] >= '{beginDateExpenses}' ORDER BY [Date] DESC";
-            string queryIncomeFromDate = $"SELECT * FROM [{IncomeTable}] WHERE [Date] >= '{beginDateIncome}' ORDER BY [Date] DESC";
+            string queryExpensesFromDate = $"SELECT * FROM [{expensesTable}] WHERE [Date] >= '{beginDateExpenses}' ORDER BY [Date] DESC";
+            string queryIncomeFromDate = $"SELECT * FROM [{incomeTable}] WHERE [Date] >= '{beginDateIncome}' ORDER BY [Date] DESC";
 
             int numberOfEntriesAdded;
 
             try
             {
                 // Обновляем базу данных
-                numberOfEntriesAdded = storage.AsynchronousDataBaseUpdate(ExpensesTable, queryExpensesFromDate);
+                numberOfEntriesAdded = storage.AsynchronousDataBaseUpdate(expensesTable, queryExpensesFromDate);
 
-                numberOfEntriesAdded += storage.AsynchronousDataBaseUpdate(IncomeTable, queryIncomeFromDate);
+                numberOfEntriesAdded += storage.AsynchronousDataBaseUpdate(incomeTable, queryIncomeFromDate);
             }
             catch (Exception ex)
             {
-                ProgressText += "Не удалось обновить базу данных.";
+                StatusText += "Не удалось обновить базу данных.";
 
                 MessageAndLogException("Не удалось обновить базу данных.", ex);
 
                 return false;
             }
 
-            ProgressText += "\t" + $"Добавлено {numberOfEntriesAdded} записей в базу данных.";
+            StatusText += "\t" + $"Добавлено {numberOfEntriesAdded} записей в базу данных.";
 
             MessageBox.Show((numberOfEntriesAdded == 0)
                                 ? "База данных не изменена."

@@ -16,28 +16,40 @@ namespace CSVtoDataBase
         /// <summary>
         /// Имя таблицы клиентов.
         /// </summary>
-        public static string CustomersTable = "Customers";
+        private const string customersTable = "Customers";
 
         /// <summary>
         /// Имя таблицы выплат.
         /// </summary>
-        public static string ExpensesTable = "Expenses";
+        private const string expensesTable = "Expenses";
 
         /// <summary>
         /// Имя таблицы поступлений.
         /// </summary>
-        public static string IncomeTable = "Income";
+        private const string incomeTable = "Income";
 
+        /// <summary>
+        /// Таблица, содержащая данные выписок.
+        /// </summary>
         private const string reportsTable = "Reports";
 
+        /// <summary>
+        /// Список клиентов.
+        /// </summary>
         private ListCustomers listCustomers;
 
+        /// <summary>
+        /// Хранилище данных.
+        /// </summary>
         private readonly IStorageDatabase storage;
 
         private int progressMaximum;
         private string progressText;
         private int progressValue;
 
+        /// <summary>
+        /// Максимальное значение прогресса выполняемой задачи.
+        /// </summary>
         public int ProgressMaximum
         {
             get => progressMaximum;
@@ -55,22 +67,9 @@ namespace CSVtoDataBase
             }
         }
 
-        public string ProgressText
-        {
-            get => progressText;
-            set
-            {
-                if (progressText == value)
-                {
-                    return;
-                }
-
-                progressText = value;
-
-                OnPropertyChanged();
-            }
-        }
-
+        /// <summary>
+        /// Текущее значение прогресса выполняемой задачи.
+        /// </summary>
         public int ProgressValue
         {
             get => progressValue;
@@ -87,8 +86,30 @@ namespace CSVtoDataBase
             }
         }
 
+        /// <summary>
+        /// Текст в статусной строке.
+        /// </summary>
+        public string StatusText
+        {
+            get => progressText;
+            set
+            {
+                if (progressText == value)
+                {
+                    return;
+                }
+
+                progressText = value;
+
+                OnPropertyChanged();
+            }
+        }
+
         private bool isDatabaseReadyToUpdated = false;
 
+        /// <summary>
+        /// Показывает готовность данных к обновлению базы.
+        /// </summary>
         public bool IsDatabaseReadyToUpdated
         {
             get => isDatabaseReadyToUpdated;
@@ -106,6 +127,9 @@ namespace CSVtoDataBase
 
         private bool isDatabaseUpdated = false;
 
+        /// <summary>
+        /// Показывает, обновлена ли база.
+        /// </summary>
         public bool IsDatabaseUpdated
         {
             get => isDatabaseUpdated;
@@ -123,6 +147,9 @@ namespace CSVtoDataBase
 
         private bool isReportsRead = false;
 
+        /// <summary>
+        /// Показывает, прочитаны ли данные выписок.
+        /// </summary>
         public bool IsReportsRead
         {
             get => isReportsRead;
@@ -188,11 +215,14 @@ namespace CSVtoDataBase
             storage.Add(dt);
         }
 
+        /// <summary>
+        /// Возвращает данные с предлагаемыми изменениями в таблице Expenses базы данных.
+        /// </summary>
         public DataView ChangesInExpenses
         {
             get
             {
-                DataTable dt = storage[ExpensesTable];
+                DataTable dt = storage[expensesTable];
 
                 if (dt == null)
                 {
@@ -203,11 +233,14 @@ namespace CSVtoDataBase
             }
         }
 
+        /// <summary>
+        /// Возвращает данные с предлагаемыми изменениями в таблице Income базы данных.
+        /// </summary>
         public DataView ChangesInIncome
         {
             get
             {
-                DataTable dt = storage[IncomeTable];
+                DataTable dt = storage[incomeTable];
 
                 if (dt == null)
                 {
@@ -218,11 +251,14 @@ namespace CSVtoDataBase
             }
         }
 
+        /// <summary>
+        /// Возвращает данные с предлагаемыми изменениями в таблице Customers базы данных.
+        /// </summary>
         public DataView ChangesInCustomers
         {
             get
             {
-                DataTable dt = storage[CustomersTable];
+                DataTable dt = storage[customersTable];
 
                 if (dt == null)
                 {
@@ -235,6 +271,9 @@ namespace CSVtoDataBase
 
         private OperationCommands readReports;
 
+        /// <summary>
+        /// Комманда чтения выписок.
+        /// </summary>
         public OperationCommands ReadReports => readReports ??= new OperationCommands(
             obj =>
             {
@@ -270,6 +309,9 @@ namespace CSVtoDataBase
 
         private OperationCommands updateDatabase;
 
+        /// <summary>
+        /// Комманда обновления бызы данных из данных выписок.
+        /// </summary>
         public OperationCommands UpdateDataBase => updateDatabase ??= new OperationCommands(
             obj =>
             {
@@ -280,7 +322,6 @@ namespace CSVtoDataBase
 
                 return ((IsReportsRead == true) && (IsDatabaseReadyToUpdated == true) && (dt != null && dt.Rows.Count != 0));
             });
-
 
         /// <summary>
         /// Создаёт диалоговое окно выбора файла/файлов и возвращает массив выбранных файлов.

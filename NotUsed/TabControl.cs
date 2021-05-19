@@ -15,9 +15,9 @@ namespace CSVtoDataBase
         /// </summary>
         struct BackupProgressBar
         {
-            public string progressText;
+            public string StatusText;
 
-            public double progressBarValue;
+            public double ProgressBarValue;
         }
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace CSVtoDataBase
         /// <summary>
         /// Saves the states of all tabs.
         /// </summary>
-        private Dictionary<string, BackupProgressBar> buckupProgressBar = new Dictionary<string, BackupProgressBar>();
+        private readonly Dictionary<string, BackupProgressBar> buckupProgressBar = new Dictionary<string, BackupProgressBar>();
 
         private void TabControl_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
